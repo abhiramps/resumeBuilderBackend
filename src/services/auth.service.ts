@@ -1,11 +1,12 @@
 import { supabase } from '../utils/supabase';
+import { prisma } from '../utils/prisma';
 import { SignUpData, SignInData, AuthResponse } from '../types/auth.types';
 
 export class AuthService {
     async signUp(data: SignUpData): Promise<AuthResponse> {
         const { email, password, fullName } = data;
 
-        // Sign up with Supabase
+        // Sign up with Supabase Auth
         const { data: authData, error } = await supabase.auth.signUp({
             email,
             password,
@@ -18,17 +19,15 @@ export class AuthService {
 
         if (error) throw error;
 
-        // Create user profile
+        // Create user profile in database using Prisma
         if (authData.user) {
-            const { error: profileError } = await supabase
-                .from('users')
-                .insert({
+            await prisma.user.create({
+                data: {
                     id: authData.user.id,
-                    email: authData.user.email,
-                    full_name: fullName,
-                });
-
-            if (profileError) throw profileError;
+                    email: authData.user.email!,
+                    fullName: fullName,
+                },
+            });
         }
 
         return {
@@ -47,11 +46,11 @@ export class AuthService {
 
         if (error) throw error;
 
-        // Update last login
-        await supabase
-            .from('users')
-            .update({ last_login_at: new Date().toISOString() })
-            .eq('id', authData.user.id);
+        // Update last login using Prisma
+        await prisma.user.update({
+            where: { id: authData.user.id },
+            data: { lastLoginAt: new Date() },
+        });
 
         return {
             user: authData.user,
@@ -99,19 +98,22 @@ export class AuthService {
 
         if (error) throw error;
 
-        // Create or update user profile
+        // Create or update user profile using Prisma
         if (data.user) {
-            const { error: profileError } = await supabase
-                .from('users')
-                .upsert({
+            await prisma.user.upsert({
+                where: { id: data.user.id },
+                update: {
+                    lastLoginAt: new Date(),
+                    avatarUrl: data.user.user_metadata.avatar_url,
+                },
+                create: {
                     id: data.user.id,
-                    email: data.user.email,
-                    full_name: data.user.user_metadata.full_name,
-                    avatar_url: data.user.user_metadata.avatar_url,
-                    last_login_at: new Date().toISOString(),
-                });
-
-            if (profileError) throw profileError;
+                    email: data.user.email!,
+                    fullName: data.user.user_metadata.full_name || data.user.email!,
+                    avatarUrl: data.user.user_metadata.avatar_url,
+                    lastLoginAt: new Date(),
+                },
+            });
         }
 
         return {

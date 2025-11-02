@@ -113,18 +113,18 @@ PUT    /users/me/preferences     - Update preferences (protected)
 
 ### Sign Up
 ```bash
-curl -X POST http://localhost:3000/auth/signup \
+curl -X POST http://localhost:3001/auth/signup \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "user@example.com",
-    "password": "securepassword123",
-    "fullName": "John Doe"
+    "email": "abhiramps776@gmail.com",
+    "password": "User@123",
+    "fullName": "Abhiram p s"
   }'
 ```
 
 ### Sign In
 ```bash
-curl -X POST http://localhost:3000/auth/signin \
+curl -X POST http://localhost:3001/auth/signin \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -134,14 +134,14 @@ curl -X POST http://localhost:3000/auth/signin \
 
 ### Get Profile (Protected)
 ```bash
-curl -X GET http://localhost:3000/users/me \
+curl -X GET http://localhost:3001/users/me \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ### OAuth Flow
 ```bash
 # 1. Get OAuth URL
-curl http://localhost:3000/auth/oauth/google
+curl http://localhost:3001/auth/oauth/google
 
 # 2. Redirect user to returned URL
 # 3. Handle callback at /auth/oauth/callback?code=...
