@@ -1,0 +1,52 @@
+service: resume-builder-api
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    DATABASE_URL: ${env:DATABASE_URL}
+    SUPABASE_URL: ${env:SUPABASE_URL}
+    SUPABASE_KEY: ${env:SUPABASE_KEY}
+    SUPABASE_SERVICE_KEY: ${env:SUPABASE_SERVICE_KEY}
+    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY}
+    STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET}
+    JWT_SECRET: ${env:JWT_SECRET}
+    PORT: ${env:PORT}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: '*'
+
+functions:
+  api:
+    handler: dist/handlers/index.handler
+    events:
+      - httpApi:
+          path: /{proxy+}
+          method: ANY
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: ${self:provider.environment.PORT}
+    
+package:
+  patterns:
+    - '!node_modules/.prisma/client/libquery_engine-*'
+    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
+    - '!node_modules/prisma/libquery_engine-*'
+    - '!node_modules/@prisma/engines/**'
