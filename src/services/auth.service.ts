@@ -46,10 +46,19 @@ export class AuthService {
 
         if (error) throw error;
 
-        // Update last login using Prisma
-        await prisma.user.update({
+        // Create or update user profile using Prisma
+        // This handles cases where user exists in Supabase Auth but not in our DB
+        await prisma.user.upsert({
             where: { id: authData.user.id },
-            data: { lastLoginAt: new Date() },
+            update: {
+                lastLoginAt: new Date(),
+            },
+            create: {
+                id: authData.user.id,
+                email: authData.user.email!,
+                fullName: authData.user.user_metadata?.full_name || authData.user.email!,
+                lastLoginAt: new Date(),
+            },
         });
 
         return {

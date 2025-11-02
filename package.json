@@ -21,7 +21,8 @@
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "sync:users": "ts-node scripts/sync-users.ts"
   },
   "keywords": [],
   "author": "",
