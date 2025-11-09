@@ -1,0 +1,9 @@
+{
+  "watch": ["src"],
+  "ext": "ts,json",
+  "ignore": ["src/**/*.test.ts", "node_modules", "dist"],
+  "exec": "clear && echo '🔄 Rebuilding...' && npm run build && echo '✅ Build complete! Starting server...' && serverless offline",
+  "delay": "1000",
+  "verbose": false,
+  "colours": true
+}

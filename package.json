@@ -7,7 +7,9 @@
     "doc": "docs"
   },
   "scripts": {
-    "dev": "serverless offline",
+    "dev": "nodemon",
+    "dev:watch": "nodemon",
+    "dev:direct": "serverless offline",
     "build": "prisma generate && tsc",
     "deploy:dev": "npm run build && serverless deploy --stage dev",
     "deploy:prod": "npm run build && serverless deploy --stage prod",

@@ -43,6 +43,7 @@ plugins:
 custom:
   serverless-offline:
     httpPort: ${self:provider.environment.PORT}
+    noPrependStageInUrl: true
     
 package:
   patterns:

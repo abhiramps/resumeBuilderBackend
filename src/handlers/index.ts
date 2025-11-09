@@ -5,8 +5,13 @@ import helmet from 'helmet';
 import authRoutes from './auth';
 import userRoutes from './users';
 import { errorHandler } from '../middleware/error.middleware';
+import { requestLogger } from '../middleware/request-logger.middleware';
+import logger from '../utils/logger';
 
 const app = express();
+
+// Request logging middleware (before other middleware)
+app.use(requestLogger);
 
 // Middleware
 app.use(helmet());
@@ -15,6 +20,7 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (_req, res) => {
+    logger.debug('Health check requested');
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
