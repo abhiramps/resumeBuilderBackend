@@ -1,8 +1,9 @@
 import { prisma } from '../utils/prisma';
-import { CreateResumeData, UpdateResumeData, Resume, ResumeListOptions, ResumeSearchOptions } from '../types/resume.types';
+import { CreateResumeData, UpdateResumeData, Resume, ResumeListOptions, ResumeSearchOptions, ResumeContent } from '../types/resume.types';
 import { ShareResumeResponse, PublicResumeView, ResumeAnalytics } from '../types/sharing.types';
+import { ExportedResume, ImportResumeData, BulkExportData } from '../types/import-export.types';
 import { checkSubscriptionLimits } from '../utils/subscription-limits';
-import { ForbiddenError, NotFoundError } from '../utils/errors';
+import { ForbiddenError, NotFoundError, BadRequestError } from '../utils/errors';
 import { Prisma } from '@prisma/client';
 import { nanoid } from 'nanoid';
 
@@ -342,6 +343,119 @@ export class ResumeService {
         });
 
         return updatedResume as Resume;
+    }
+
+    async export(resumeId: string, userId: string): Promise<ExportedResume> {
+        const resume = await this.getById(resumeId, userId);
+
+        // Update export count
+        await prisma.resume.update({
+            where: { id: resumeId },
+            data: {
+                exportCount: { increment: 1 },
+                lastExportedAt: new Date(),
+            },
+        });
+
+        return {
+            version: '1.0',
+            exportedAt: new Date().toISOString(),
+            resume: {
+                title: resume.title,
+                templateId: resume.templateId,
+                content: resume.content as ResumeContent,
+                status: resume.status,
+            },
+        };
+    }
+
+    async import(userId: string, data: ImportResumeData): Promise<Resume> {
+        // Validate import data
+        if (!data.resume || !data.resume.content) {
+            throw new BadRequestError('Invalid import data: resume content is required');
+        }
+
+        // Check version compatibility
+        if (data.version && data.version !== '1.0') {
+            throw new BadRequestError(`Unsupported import version: ${data.version}`);
+        }
+
+        // Check subscription limits
+        const canCreate = await checkSubscriptionLimits(userId, 'max_resumes');
+        if (!canCreate) {
+            throw new ForbiddenError('Resume limit reached for your subscription tier');
+        }
+
+        // Create resume from imported data
+        const resume = await prisma.resume.create({
+            data: {
+                userId,
+                title: data.resume.title || 'Imported Resume',
+                templateId: data.resume.templateId || 'modern',
+                content: data.resume.content as Prisma.InputJsonValue,
+                status: 'draft',
+            },
+        });
+
+        // Update user resume count
+        await this.updateResumeCount(userId);
+
+        return resume as Resume;
+    }
+
+    async duplicate(resumeId: string, userId: string): Promise<Resume> {
+        // Get original resume
+        const original = await this.getById(resumeId, userId);
+
+        // Check subscription limits
+        const canCreate = await checkSubscriptionLimits(userId, 'max_resumes');
+        if (!canCreate) {
+            throw new ForbiddenError('Resume limit reached for your subscription tier');
+        }
+
+        // Create duplicate
+        const duplicate = await prisma.resume.create({
+            data: {
+                userId,
+                title: `${original.title} (Copy)`,
+                templateId: original.templateId,
+                content: original.content as Prisma.InputJsonValue,
+                status: 'draft',
+            },
+        });
+
+        // Update user resume count
+        await this.updateResumeCount(userId);
+
+        return duplicate as Resume;
+    }
+
+    async bulkExport(userId: string, resumeIds?: string[]): Promise<BulkExportData> {
+        // Build where clause
+        const where: Prisma.ResumeWhereInput = {
+            userId,
+            deletedAt: null,
+            ...(resumeIds && resumeIds.length > 0 && { id: { in: resumeIds } }),
+        };
+
+        const resumes = await prisma.resume.findMany({
+            where,
+            orderBy: { updatedAt: 'desc' },
+        });
+
+        return {
+            version: '1.0',
+            exportedAt: new Date().toISOString(),
+            resumes: resumes.map((resume) => ({
+                id: resume.id,
+                title: resume.title,
+                templateId: resume.templateId,
+                content: resume.content as ResumeContent,
+                status: resume.status,
+                createdAt: resume.createdAt.toISOString(),
+                updatedAt: resume.updatedAt.toISOString(),
+            })),
+        };
     }
 
     private async updateResumeCount(userId: string): Promise<void> {

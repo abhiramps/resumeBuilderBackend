@@ -19,6 +19,27 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+// Import resume
+router.post('/import', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const resume = await resumeService.import(req.user!.id, req.body);
+        res.status(201).json({ data: resume });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Bulk export
+router.post('/export', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { resumeIds } = req.body;
+        const data = await resumeService.bulkExport(req.user!.id, resumeIds);
+        res.json({ data });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Create resume
 router.post('/', authenticate, validateRequest(createResumeSchema), async (req: AuthRequest, res, next) => {
     try {
@@ -115,6 +136,26 @@ router.put('/:id', authenticate, validateRequest(updateResumeSchema), async (req
     try {
         const resume = await resumeService.update(req.params.id, req.user!.id, req.body);
         res.json({ data: resume });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Export resume
+router.get('/:id/export', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const data = await resumeService.export(req.params.id, req.user!.id);
+        res.json({ data });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Duplicate resume
+router.post('/:id/duplicate', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const resume = await resumeService.duplicate(req.params.id, req.user!.id);
+        res.status(201).json({ data: resume });
     } catch (error) {
         next(error);
     }
