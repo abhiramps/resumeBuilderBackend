@@ -7,6 +7,7 @@ provider:
   runtime: nodejs22.x
   region: us-east-1
   stage: ${opt:stage, 'dev'}
+  profile: personal
   memorySize: 512
   timeout: 30
   environment:
@@ -30,12 +31,32 @@ provider:
           Resource: '*'
 
 functions:
-  api:
-    handler: dist/handlers/index.handler
+  auth:
+    handler: dist/handlers/auth.handler
     events:
       - httpApi:
-          path: /{proxy+}
+          path: /auth/{proxy+}
           method: ANY
+      - httpApi:
+          path: /auth
+          method: ANY
+  
+  users:
+    handler: dist/handlers/users.handler
+    events:
+      - httpApi:
+          path: /users/{proxy+}
+          method: ANY
+      - httpApi:
+          path: /users
+          method: ANY
+  
+  health:
+    handler: dist/handlers/health.handler
+    events:
+      - httpApi:
+          path: /health
+          method: GET
 
 plugins:
   - serverless-offline

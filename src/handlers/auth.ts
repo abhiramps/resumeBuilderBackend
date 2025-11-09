@@ -1,11 +1,23 @@
-import { Router } from 'express';
+import serverless from 'serverless-http';
+import express, { Router } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
 import { AuthService } from '../services/auth.service';
 import { validateRequest } from '../middleware/validation.middleware';
 import { signUpSchema, signInSchema, resetPasswordSchema } from '../validators/auth.validators';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { errorHandler } from '../middleware/error.middleware';
+import { requestLogger } from '../middleware/request-logger.middleware';
 
+const app = express();
 const router = Router();
 const authService = new AuthService();
+
+// Middleware
+app.use(requestLogger);
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
 
 // Sign up
 router.post('/signup', validateRequest(signUpSchema), async (req, res, next) => {
@@ -101,4 +113,11 @@ router.delete('/sessions/:id', authenticate, async (req, res, next) => {
     }
 });
 
-export default router;
+// Mount routes - handle both /auth/* and /* paths
+app.use('/auth', router);
+app.use('/', router);
+
+// Error handler
+app.use(errorHandler);
+
+export const handler = serverless(app);

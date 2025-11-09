@@ -1,9 +1,21 @@
-import { Router } from 'express';
+import serverless from 'serverless-http';
+import express, { Router } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
 import { UserService } from '../services/user.service';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { errorHandler } from '../middleware/error.middleware';
+import { requestLogger } from '../middleware/request-logger.middleware';
 
+const app = express();
 const router = Router();
 const userService = new UserService();
+
+// Middleware
+app.use(requestLogger);
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
 
 // Get current user profile
 router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
@@ -45,4 +57,11 @@ router.put('/me/preferences', authenticate, async (req: AuthRequest, res, next) 
     }
 });
 
-export default router;
+// Mount routes - handle both /users/* and /* paths
+app.use('/users', router);
+app.use('/', router);
+
+// Error handler
+app.use(errorHandler);
+
+export const handler = serverless(app);
