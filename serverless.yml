@@ -51,6 +51,26 @@ functions:
           path: /users
           method: ANY
   
+  resumes:
+    handler: dist/handlers/resumes.handler
+    events:
+      - httpApi:
+          path: /resumes/{proxy+}
+          method: ANY
+      - httpApi:
+          path: /resumes
+          method: ANY
+  
+  versions:
+    handler: dist/handlers/versions.handler
+    events:
+      - httpApi:
+          path: /resumes/{resumeId}/versions/{proxy+}
+          method: ANY
+      - httpApi:
+          path: /resumes/{resumeId}/versions
+          method: ANY
+  
   health:
     handler: dist/handlers/health.handler
     events:

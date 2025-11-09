@@ -1,20 +1,21 @@
-export interface ResumeData {
-    id?: string;
-    user_id: string;
+export interface Resume {
+    id: string;
+    userId: string;
     title: string;
-    template_id?: string;
+    templateId: string;
     content: ResumeContent;
-    is_public: boolean;
-    created_at?: string;
-    updated_at?: string;
+    status: 'draft' | 'published';
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt: Date | null;
 }
 
 export interface ResumeContent {
-    personalInfo: PersonalInfo;
+    personalInfo?: PersonalInfo;
     summary?: string;
-    experience: Experience[];
-    education: Education[];
-    skills: Skill[];
+    experience?: Experience[];
+    education?: Education[];
+    skills?: Skill[];
     certifications?: Certification[];
     projects?: Project[];
     languages?: Language[];
@@ -25,9 +26,9 @@ export interface PersonalInfo {
     email: string;
     phone?: string;
     location?: string;
+    website?: string;
     linkedin?: string;
     github?: string;
-    website?: string;
 }
 
 export interface Experience {
@@ -38,7 +39,8 @@ export interface Experience {
     startDate: string;
     endDate?: string;
     current: boolean;
-    description: string[];
+    description: string;
+    highlights?: string[];
 }
 
 export interface Education {
@@ -50,13 +52,14 @@ export interface Education {
     startDate: string;
     endDate?: string;
     gpa?: string;
-    description?: string[];
+    description?: string;
 }
 
 export interface Skill {
     id: string;
-    category: string;
-    items: string[];
+    name: string;
+    level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+    category?: string;
 }
 
 export interface Certification {
@@ -64,6 +67,8 @@ export interface Certification {
     name: string;
     issuer: string;
     date: string;
+    expiryDate?: string;
+    credentialId?: string;
     url?: string;
 }
 
@@ -71,8 +76,9 @@ export interface Project {
     id: string;
     name: string;
     description: string;
-    technologies: string[];
+    technologies?: string[];
     url?: string;
+    github?: string;
     startDate?: string;
     endDate?: string;
 }
@@ -80,5 +86,25 @@ export interface Project {
 export interface Language {
     id: string;
     name: string;
-    proficiency: 'Native' | 'Fluent' | 'Professional' | 'Intermediate' | 'Basic';
+    proficiency: 'basic' | 'conversational' | 'fluent' | 'native';
+}
+
+export interface CreateResumeData {
+    title: string;
+    templateId?: string;
+    content?: ResumeContent;
+}
+
+export interface UpdateResumeData {
+    title?: string;
+    templateId?: string;
+    content?: ResumeContent;
+    status?: 'draft' | 'published';
+}
+
+export interface ResumeListOptions {
+    page?: number;
+    limit?: number;
+    status?: 'draft' | 'published';
+    template?: string;
 }

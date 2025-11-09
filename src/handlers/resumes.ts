@@ -1,0 +1,93 @@
+import serverless from 'serverless-http';
+import express, { Router } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import { ResumeService } from '../services/resume.service';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { validateRequest } from '../middleware/validation.middleware';
+import { createResumeSchema, updateResumeSchema } from '../validators/resume.validators';
+import { errorHandler } from '../middleware/error.middleware';
+import { requestLogger } from '../middleware/request-logger.middleware';
+
+const app = express();
+const router = Router();
+const resumeService = new ResumeService();
+
+// Middleware
+app.use(requestLogger);
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+// Create resume
+router.post('/', authenticate, validateRequest(createResumeSchema), async (req: AuthRequest, res, next) => {
+    try {
+        const resume = await resumeService.create(req.user!.id, req.body);
+        res.status(201).json({ data: resume });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// List resumes
+router.get('/', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { page, limit, status, template } = req.query;
+        const result = await resumeService.list(req.user!.id, {
+            page: page ? parseInt(page as string) : undefined,
+            limit: limit ? parseInt(limit as string) : undefined,
+            status: status as 'draft' | 'published' | undefined,
+            template: template as string | undefined,
+        });
+        res.json({
+            data: result.resumes,
+            pagination: {
+                page: page ? parseInt(page as string) : 1,
+                limit: limit ? parseInt(limit as string) : 10,
+                total: result.total,
+                totalPages: Math.ceil(result.total / (limit ? parseInt(limit as string) : 10)),
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Get resume by ID
+router.get('/:id', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const resume = await resumeService.getById(req.params.id, req.user!.id);
+        res.json({ data: resume });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Update resume
+router.put('/:id', authenticate, validateRequest(updateResumeSchema), async (req: AuthRequest, res, next) => {
+    try {
+        const resume = await resumeService.update(req.params.id, req.user!.id, req.body);
+        res.json({ data: resume });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Delete resume
+router.delete('/:id', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        await resumeService.delete(req.params.id, req.user!.id);
+        res.json({ message: 'Resume deleted successfully' });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Mount routes - handle both /resumes/* and /* paths
+app.use('/resumes', router);
+app.use('/', router);
+
+// Error handler
+app.use(errorHandler);
+
+export const handler = serverless(app);
