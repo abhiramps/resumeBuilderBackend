@@ -29,23 +29,70 @@ router.post('/', authenticate, validateRequest(createResumeSchema), async (req: 
     }
 });
 
+// Search resumes
+router.get('/search', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { q, page, limit, status, template, sortBy, sortOrder } = req.query;
+
+        if (!q || typeof q !== 'string') {
+            res.status(400).json({
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Search query parameter "q" is required',
+                },
+            });
+            return;
+        }
+
+        const result = await resumeService.search(req.user!.id, q, {
+            page: page ? parseInt(page as string) : undefined,
+            limit: limit ? parseInt(limit as string) : undefined,
+            status: status as 'draft' | 'published' | undefined,
+            template: template as string | undefined,
+            sortBy: sortBy as 'updatedAt' | 'createdAt' | 'title' | 'relevance' | undefined,
+            sortOrder: sortOrder as 'asc' | 'desc' | undefined,
+        });
+
+        const pageNum = page ? parseInt(page as string) : 1;
+        const limitNum = limit ? parseInt(limit as string) : 10;
+
+        res.json({
+            data: result.resumes,
+            pagination: {
+                page: pageNum,
+                limit: limitNum,
+                total: result.total,
+                totalPages: Math.ceil(result.total / limitNum),
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // List resumes
 router.get('/', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        const { page, limit, status, template } = req.query;
+        const { page, limit, status, template, sortBy, sortOrder } = req.query;
         const result = await resumeService.list(req.user!.id, {
             page: page ? parseInt(page as string) : undefined,
             limit: limit ? parseInt(limit as string) : undefined,
             status: status as 'draft' | 'published' | undefined,
             template: template as string | undefined,
+            sortBy: sortBy as 'updatedAt' | 'createdAt' | 'title' | undefined,
+            sortOrder: sortOrder as 'asc' | 'desc' | undefined,
         });
+
+        const pageNum = page ? parseInt(page as string) : 1;
+        const limitNum = limit ? parseInt(limit as string) : 10;
+
         res.json({
             data: result.resumes,
             pagination: {
-                page: page ? parseInt(page as string) : 1,
-                limit: limit ? parseInt(limit as string) : 10,
+                page: pageNum,
+                limit: limitNum,
                 total: result.total,
-                totalPages: Math.ceil(result.total / (limit ? parseInt(limit as string) : 10)),
+                totalPages: Math.ceil(result.total / limitNum),
             },
         });
     } catch (error) {

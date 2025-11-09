@@ -2,9 +2,15 @@ export interface Resume {
     id: string;
     userId: string;
     title: string;
+    description?: string | null;
     templateId: string;
     content: ResumeContent;
     status: 'draft' | 'published';
+    isPublic: boolean;
+    publicSlug: string | null;
+    viewCount: number;
+    exportCount: number;
+    lastExportedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;
@@ -107,4 +113,15 @@ export interface ResumeListOptions {
     limit?: number;
     status?: 'draft' | 'published';
     template?: string;
+    sortBy?: 'updatedAt' | 'createdAt' | 'title';
+    sortOrder?: 'asc' | 'desc';
+}
+
+export interface ResumeSearchOptions {
+    page?: number;
+    limit?: number;
+    status?: 'draft' | 'published';
+    template?: string;
+    sortBy?: 'updatedAt' | 'createdAt' | 'title' | 'relevance';
+    sortOrder?: 'asc' | 'desc';
 }

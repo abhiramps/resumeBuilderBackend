@@ -71,6 +71,19 @@ functions:
           path: /resumes/{resumeId}/versions
           method: ANY
   
+  sharing:
+    handler: dist/handlers/sharing.handler
+    events:
+      - httpApi:
+          path: /resumes/{id}/share
+          method: ANY
+      - httpApi:
+          path: /resumes/{id}/analytics
+          method: GET
+      - httpApi:
+          path: /public/{slug}
+          method: GET
+  
   health:
     handler: dist/handlers/health.handler
     events:
