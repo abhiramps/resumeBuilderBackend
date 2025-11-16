@@ -82,6 +82,17 @@ router.get('/oauth/callback', async (req, res, next) => {
     }
 });
 
+// Get current session
+router.get('/session', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        res.json({
+            user: req.user,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Refresh token
 router.post('/refresh', async (req, res, next) => {
     try {
