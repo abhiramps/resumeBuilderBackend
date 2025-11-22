@@ -5,6 +5,7 @@ dotenv.config();
 export const config = {
     env: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT || '3001', 10),
+    logLevel: process.env.LOG_LEVEL || 'info',
 
     database: {
         url: process.env.DATABASE_URL!,
@@ -32,7 +33,7 @@ export const config = {
     },
 
     frontend: {
-        url: process.env.FRONTEND_URL || 'http://localhost:5173',
+        url: process.env.FRONTEND_URL || 'http://localhost:3000',
     },
 };
 

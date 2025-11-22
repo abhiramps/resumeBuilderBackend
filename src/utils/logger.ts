@@ -1,4 +1,5 @@
 import winston from 'winston';
+import { config } from '../config';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
@@ -21,7 +22,7 @@ const consoleFormat = printf(({ level, message, timestamp, stack, ...metadata })
 
 // Create logger instance
 export const logger = winston.createLogger({
-    level: process.env.LOG_LEVEL || 'info',
+    level: config.logLevel || 'info',
     format: combine(
         errors({ stack: true }),
         timestamp({ format: 'YYYY-MM-DD HH:mm:ss' })
@@ -38,7 +39,7 @@ export const logger = winston.createLogger({
 });
 
 // Add file transport in production
-if (process.env.NODE_ENV === 'production') {
+if (config.env === 'production') {
     logger.add(
         new winston.transports.File({
             filename: 'logs/error.log',

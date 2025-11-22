@@ -1,6 +1,7 @@
 import { supabase } from '../utils/supabase';
 import { prisma } from '../utils/prisma';
 import { SignUpData, SignInData, AuthResponse } from '../types/auth.types';
+import { config } from '../config';
 
 export class AuthService {
     async signUp(data: SignUpData): Promise<AuthResponse> {
@@ -65,7 +66,7 @@ export class AuthService {
 
     async resetPassword(email: string): Promise<void> {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${process.env.FRONTEND_URL}/reset-password`,
+            redirectTo: `${config.frontend.url}/reset-password`,
         });
 
         if (error) throw error;
@@ -84,7 +85,7 @@ export class AuthService {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider,
             options: {
-                redirectTo: `${process.env.FRONTEND_URL}/auth/callback`,
+                redirectTo: `${config.frontend.url}/auth/callback`,
             },
         });
 

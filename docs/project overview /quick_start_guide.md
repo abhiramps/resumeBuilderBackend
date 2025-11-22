@@ -69,7 +69,7 @@ SUPABASE_SERVICE_KEY=your_service_key
 STRIPE_SECRET_KEY=sk_test_xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
 JWT_SECRET=your_random_secret_key
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:3000
 AWS_REGION=us-east-1
 NODE_ENV=development
 ```

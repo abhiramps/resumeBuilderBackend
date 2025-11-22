@@ -2,6 +2,8 @@ service: resume-builder-api
 
 frameworkVersion: '4'
 
+useDotenv: true
+
 provider:
   name: aws
   runtime: nodejs22.x
@@ -13,12 +15,15 @@ provider:
   environment:
     NODE_ENV: ${self:provider.stage}
     DATABASE_URL: ${env:DATABASE_URL}
+    DIRECT_URL: ${env:DIRECT_URL}
     SUPABASE_URL: ${env:SUPABASE_URL}
     SUPABASE_KEY: ${env:SUPABASE_KEY}
     SUPABASE_SERVICE_KEY: ${env:SUPABASE_SERVICE_KEY}
     STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY}
     STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET}
     JWT_SECRET: ${env:JWT_SECRET}
+    FRONTEND_URL: ${env:FRONTEND_URL}
+    LOG_LEVEL: ${env:LOG_LEVEL}
     PORT: ${env:PORT}
   iam:
     role:

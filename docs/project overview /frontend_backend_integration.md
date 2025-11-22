@@ -45,7 +45,7 @@ This document outlines how the Resume Builder frontend (React on Vercel) integra
 ### Base URLs
 
 **Development:**
-- Frontend: `http://localhost:5173`
+- Frontend: `http://localhost:3000`
 - Backend: `http://localhost:3000`
 
 **Production:**
@@ -460,7 +460,7 @@ import cors from 'cors';
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
     ? 'https://resumebuilder.vercel.app'
-    : 'http://localhost:5173',
+    : 'http://localhost:3000',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Authorization', 'Content-Type']
@@ -481,7 +481,7 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 ### Backend (.env)
 
 ```env
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:3000
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_KEY=xxx
 STRIPE_SECRET_KEY=sk_test_xxx

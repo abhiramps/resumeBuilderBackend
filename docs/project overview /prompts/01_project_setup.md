@@ -243,7 +243,7 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx
 JWT_SECRET=your_jwt_secret_key
 
 # Frontend
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:3000
 
 # AWS
 AWS_REGION=us-east-1
@@ -593,7 +593,7 @@ export const config = {
   },
   
   frontend: {
-    url: process.env.FRONTEND_URL || 'http://localhost:5173',
+    url: process.env.FRONTEND_URL || 'http://localhost:3000',
   },
 };
 

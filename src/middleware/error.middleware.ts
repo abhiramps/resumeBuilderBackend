@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/errors';
 import logger from '../utils/logger';
+import { config } from '../config';
 
 export const errorHandler = (
     err: Error,
@@ -46,7 +47,7 @@ export const errorHandler = (
         success: false,
         error: {
             code: 'INTERNAL_SERVER_ERROR',
-            message: process.env.NODE_ENV === 'production'
+            message: config.env === 'production'
                 ? 'An unexpected error occurred'
                 : err.message,
         },

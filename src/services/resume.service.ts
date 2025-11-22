@@ -6,6 +6,7 @@ import { checkSubscriptionLimits } from '../utils/subscription-limits';
 import { ForbiddenError, NotFoundError, BadRequestError } from '../utils/errors';
 import { Prisma } from '@prisma/client';
 import { nanoid } from 'nanoid';
+import { config } from '../config';
 
 export class ResumeService {
     async create(userId: string, data: CreateResumeData): Promise<Resume> {
@@ -229,7 +230,7 @@ export class ResumeService {
         if (resume.isPublic && resume.publicSlug) {
             return {
                 slug: resume.publicSlug,
-                url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/public/${resume.publicSlug}`,
+                url: `${config.frontend.url}/public/${resume.publicSlug}`,
                 isPublic: true,
             };
         }
@@ -248,7 +249,7 @@ export class ResumeService {
 
         return {
             slug,
-            url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/public/${slug}`,
+            url: `${config.frontend.url}/public/${slug}`,
             isPublic: true,
         };
     }
