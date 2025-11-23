@@ -1,6 +1,5 @@
 import serverless from 'serverless-http';
 import express, { Router } from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
 import { ResumeService } from '../services/resume.service';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
@@ -16,12 +15,7 @@ const resumeService = new ResumeService();
 // Middleware
 app.use(requestLogger);
 app.use(helmet());
-app.use(cors({
-    origin: '*',
-    credentials: false,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// CORS is handled by API Gateway - see serverless.yml
 app.use(express.json());
 
 // Import resume

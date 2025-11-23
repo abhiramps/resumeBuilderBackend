@@ -1,6 +1,5 @@
 import serverless from 'serverless-http';
 import express, { Router } from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
 import { UserService } from '../services/user.service';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
@@ -14,12 +13,7 @@ const userService = new UserService();
 // Middleware
 app.use(requestLogger);
 app.use(helmet());
-app.use(cors({
-    origin: '*',
-    credentials: false,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// CORS is handled by API Gateway - see serverless.yml
 app.use(express.json());
 
 // Get current user profile

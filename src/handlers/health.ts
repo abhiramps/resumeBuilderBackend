@@ -1,6 +1,5 @@
 import serverless from 'serverless-http';
 import express from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
 import logger from '../utils/logger';
 
@@ -8,12 +7,7 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-    origin: '*',
-    credentials: false,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// CORS is handled by API Gateway - see serverless.yml
 app.use(express.json());
 
 // Health check
