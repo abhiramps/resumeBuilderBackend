@@ -10,7 +10,7 @@ provider:
   region: us-east-1
   stage: ${opt:stage, 'dev'}
   profile: personal
-  memorySize: 512
+  memorySize: 1024
   timeout: 30
   environment:
     NODE_ENV: ${self:provider.stage}

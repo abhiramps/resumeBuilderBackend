@@ -85,12 +85,28 @@ export class ResumeService {
                 orderBy,
                 skip: offset,
                 take: limit,
+                select: {
+                    id: true,
+                    userId: true,
+                    title: true,
+                    description: true,
+                    templateId: true,
+                    status: true,
+                    isPublic: true,
+                    publicSlug: true,
+                    atsScore: true,
+                    viewCount: true,
+                    exportCount: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    // Exclude large content field from list view for better performance
+                },
             }),
             prisma.resume.count({ where }),
         ]);
 
         return {
-            resumes: resumes as Resume[],
+            resumes: resumes as any as Resume[],
             total,
         };
     }

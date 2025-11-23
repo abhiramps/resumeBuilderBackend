@@ -106,6 +106,9 @@ router.get('/', authenticate, async (req: AuthRequest, res, next) => {
         const pageNum = page ? parseInt(page as string) : 1;
         const limitNum = limit ? parseInt(limit as string) : 10;
 
+        // Cache for 30 seconds
+        res.set('Cache-Control', 'private, max-age=30');
+
         res.json({
             data: result.resumes,
             pagination: {

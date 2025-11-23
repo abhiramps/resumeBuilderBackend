@@ -88,11 +88,14 @@ model Resume {
   // Relations
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   versions          ResumeVersion[]
-  
+
   @@index([userId])
   @@index([templateId])
   @@index([status])
   @@index([publicSlug])
+  @@index([userId, deletedAt])
+  @@index([userId, updatedAt])
+  @@index([userId, status, deletedAt])
   @@map("resumes")
 }
 
