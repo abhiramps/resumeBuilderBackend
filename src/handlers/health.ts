@@ -9,12 +9,8 @@ const app = express();
 // Middleware
 app.use(helmet());
 app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'https://resume-builder-seven-mu.vercel.app',
-        /\.vercel\.app$/
-    ],
-    credentials: true,
+    origin: '*',
+    credentials: false,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));

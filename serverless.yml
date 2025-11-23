@@ -25,6 +25,23 @@ provider:
     FRONTEND_URL: ${env:FRONTEND_URL}
     LOG_LEVEL: ${env:LOG_LEVEL}
     PORT: ${env:PORT}
+  httpApi:
+    cors:
+      allowedOrigins:
+        - https://resume-builder-seven-mu.vercel.app
+        - http://localhost:3000
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - OPTIONS
+      allowCredentials: false
+      maxAge: 6000
   iam:
     role:
       statements:
