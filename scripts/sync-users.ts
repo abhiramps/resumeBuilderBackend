@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { supabaseAdmin } from '../src/utils/supabase';
 import { prisma } from '../src/utils/prisma';
 
