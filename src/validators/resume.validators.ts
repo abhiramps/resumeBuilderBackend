@@ -96,6 +96,29 @@ const sectionMetadataSchema = Joi.object({
     order: Joi.number().integer().min(0).required(),
 });
 
+const layoutSchema = Joi.object({
+    pageMargins: Joi.object({
+        top: Joi.number().min(0).max(5).required(),
+        right: Joi.number().min(0).max(5).required(),
+        bottom: Joi.number().min(0).max(5).required(),
+        left: Joi.number().min(0).max(5).required(),
+    }).optional(),
+    sectionSpacing: Joi.number().min(0).max(100).optional(),
+    lineHeight: Joi.number().min(1).max(3).optional(),
+    fontSize: Joi.object({
+        name: Joi.number().min(10).max(50).optional(),
+        title: Joi.number().min(8).max(30).optional(),
+        sectionHeader: Joi.number().min(8).max(30).optional(),
+        body: Joi.number().min(8).max(20).optional(),
+    }).optional(),
+    fontFamily: Joi.string().max(100).optional(),
+    colors: Joi.object({
+        primary: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional(),
+        secondary: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional(),
+        text: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional(),
+    }).optional(),
+});
+
 const contentSchema = Joi.object({
     personalInfo: personalInfoSchema.optional(),
     summary: Joi.string().optional().max(2000),
@@ -106,6 +129,7 @@ const contentSchema = Joi.object({
     projects: Joi.array().items(projectSchema).optional(),
     languages: Joi.array().items(languageSchema).optional(),
     sectionOrder: Joi.array().items(sectionMetadataSchema).optional(),
+    layout: layoutSchema.optional(),
 });
 
 // Relaxed content schema for updates
@@ -119,6 +143,7 @@ const contentUpdateSchema = Joi.object({
     projects: Joi.array().items(projectSchema).optional(),
     languages: Joi.array().items(languageSchema).optional(),
     sectionOrder: Joi.array().items(sectionMetadataSchema).optional(),
+    layout: layoutSchema.optional(),
 });
 
 export const createResumeSchema = Joi.object({
