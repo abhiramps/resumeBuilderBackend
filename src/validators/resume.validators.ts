@@ -88,6 +88,14 @@ const languageSchema = Joi.object({
     proficiency: Joi.string().valid('basic', 'conversational', 'fluent', 'native').required(),
 });
 
+const sectionMetadataSchema = Joi.object({
+    id: Joi.string().required(),
+    type: Joi.string().required().max(100),
+    title: Joi.string().required().max(255),
+    enabled: Joi.boolean().required(),
+    order: Joi.number().integer().min(0).required(),
+});
+
 const contentSchema = Joi.object({
     personalInfo: personalInfoSchema.optional(),
     summary: Joi.string().optional().max(2000),
@@ -97,6 +105,7 @@ const contentSchema = Joi.object({
     certifications: Joi.array().items(certificationSchema).optional(),
     projects: Joi.array().items(projectSchema).optional(),
     languages: Joi.array().items(languageSchema).optional(),
+    sectionOrder: Joi.array().items(sectionMetadataSchema).optional(),
 });
 
 // Relaxed content schema for updates
@@ -109,6 +118,7 @@ const contentUpdateSchema = Joi.object({
     certifications: Joi.array().items(certificationSchema).optional(),
     projects: Joi.array().items(projectSchema).optional(),
     languages: Joi.array().items(languageSchema).optional(),
+    sectionOrder: Joi.array().items(sectionMetadataSchema).optional(),
 });
 
 export const createResumeSchema = Joi.object({
