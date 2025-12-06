@@ -15,6 +15,7 @@ export class AuthService {
                 data: {
                     full_name: fullName,
                 },
+                emailRedirectTo: `${config.frontend.url}/auth/confirm`,
             },
         });
 
