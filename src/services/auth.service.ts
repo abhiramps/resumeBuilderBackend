@@ -31,9 +31,14 @@ export class AuthService {
             });
         }
 
+        // Check if email verification is required
+        // Session will be null if email verification is required
+        const requiresEmailVerification = !authData.session && !!authData.user && !authData.user.email_confirmed_at;
+
         return {
             user: authData.user,
             session: authData.session,
+            requiresEmailVerification,
         };
     }
 
