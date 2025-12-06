@@ -14,6 +14,7 @@ export interface SignInData {
 export interface AuthResponse {
     user: User | null;
     session: Session | null;
+    requiresEmailVerification?: boolean;
 }
 
 export interface TokenPayload {
