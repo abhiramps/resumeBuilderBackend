@@ -7,6 +7,14 @@ export class AuthService {
     async signUp(data: SignUpData): Promise<AuthResponse> {
         const { email, password, fullName } = data;
 
+        // Ensure frontend URL doesn't have trailing slash
+        const frontendUrl = config.frontend.url.replace(/\/$/, '');
+        const redirectUrl = `${frontendUrl}/auth/confirm`;
+
+        // Log redirect URL for debugging (remove in production if needed)
+        console.log('[AuthService] SignUp - Using redirect URL:', redirectUrl);
+        console.log('[AuthService] SignUp - FRONTEND_URL env:', process.env.FRONTEND_URL);
+
         // Sign up with Supabase Auth
         const { data: authData, error } = await supabase.auth.signUp({
             email,
@@ -15,7 +23,7 @@ export class AuthService {
                 data: {
                     full_name: fullName,
                 },
-                emailRedirectTo: `${config.frontend.url}/auth/confirm`,
+                emailRedirectTo: redirectUrl,
             },
         });
 
