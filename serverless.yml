@@ -29,6 +29,7 @@ provider:
     cors:
       allowedOrigins:
         - https://resume-builder-seven-mu.vercel.app
+        - https://resumebuildr.org
         - http://localhost:3000
       allowedHeaders:
         - Content-Type
@@ -62,7 +63,7 @@ functions:
       - httpApi:
           path: /auth
           method: ANY
-  
+
   users:
     handler: dist/handlers/users.handler
     events:
@@ -72,7 +73,7 @@ functions:
       - httpApi:
           path: /users
           method: ANY
-  
+
   resumes:
     handler: dist/handlers/resumes.handler
     events:
@@ -82,7 +83,7 @@ functions:
       - httpApi:
           path: /resumes
           method: ANY
-  
+
   versions:
     handler: dist/handlers/versions.handler
     events:
@@ -92,7 +93,7 @@ functions:
       - httpApi:
           path: /resumes/{resumeId}/versions
           method: ANY
-  
+
   sharing:
     handler: dist/handlers/sharing.handler
     events:
@@ -105,7 +106,7 @@ functions:
       - httpApi:
           path: /public/{slug}
           method: GET
-  
+
   health:
     handler: dist/handlers/health.handler
     events:

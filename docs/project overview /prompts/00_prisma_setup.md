@@ -31,6 +31,7 @@ npx prisma init
 ```
 
 This creates:
+
 - `prisma/schema.prisma` - Your database schema
 - `.env` - Environment variables (if not exists)
 
@@ -44,6 +45,7 @@ This creates:
 4. Replace `[YOUR-PASSWORD]` with your database password
 
 Example:
+
 ```
 postgresql://postgres.xxxxx:password@aws-0-us-east-1.pooler.supabase.com:5432/postgres
 ```
@@ -106,34 +108,34 @@ model User {
   email                 String    @unique
   fullName              String?   @map("full_name")
   avatarUrl             String?   @map("avatar_url")
-  
+
   // Subscription info
   subscriptionTier      String    @default("free") @map("subscription_tier")
   subscriptionStatus    String    @default("active") @map("subscription_status")
   subscriptionExpiresAt DateTime? @map("subscription_expires_at")
   trialEndsAt           DateTime? @map("trial_ends_at")
   stripeCustomerId      String?   @unique @map("stripe_customer_id")
-  
+
   // Usage tracking
   resumeCount           Int       @default(0) @map("resume_count")
   exportCount           Int       @default(0) @map("export_count")
   storageUsedBytes      BigInt    @default(0) @map("storage_used_bytes")
-  
+
   // Preferences
   preferences           Json      @default("{\"theme\":\"light\",\"defaultTemplate\":\"modern\",\"autoSave\":true}")
-  
+
   // Metadata
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
   lastLoginAt           DateTime? @map("last_login_at")
   isActive              Boolean   @default(true) @map("is_active")
   deletedAt             DateTime? @map("deleted_at")
-  
+
   // Relations
   resumes               Resume[]
   subscriptions         Subscription[]
   payments              Payment[]
-  
+
   @@index([email])
   @@index([subscriptionTier])
   @@map("users")
@@ -146,44 +148,44 @@ model User {
 model Resume {
   id                String    @id @default(uuid())
   userId            String    @map("user_id")
-  
+
   // Resume metadata
   title             String
   description       String?
   templateId        String    @map("template_id")
-  
+
   // Resume content (JSONB for flexibility)
   content           Json      @default("{\"personalInfo\":{},\"sections\":[],\"layout\":{}}")
-  
+
   // Version control
   version           Int       @default(1)
   isCurrentVersion  Boolean   @default(true) @map("is_current_version")
   parentVersionId   String?   @map("parent_version_id")
-  
+
   // Status
   status            String    @default("draft") // draft, published, archived
   isPublic          Boolean   @default(false) @map("is_public")
   publicSlug        String?   @unique @map("public_slug")
-  
+
   // ATS metrics
   atsScore          Int?      @map("ats_score")
   atsIssues         Json      @default("[]") @map("ats_issues")
   lastAtsCheckAt    DateTime? @map("last_ats_check_at")
-  
+
   // Analytics
   viewCount         Int       @default(0) @map("view_count")
   exportCount       Int       @default(0) @map("export_count")
   lastExportedAt    DateTime? @map("last_exported_at")
-  
+
   // Metadata
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
   deletedAt         DateTime? @map("deleted_at")
-  
+
   // Relations
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   versions          ResumeVersion[]
-  
+
   @@index([userId])
   @@index([templateId])
   @@index([status])
@@ -196,26 +198,26 @@ model ResumeVersion {
   id              String   @id @default(uuid())
   resumeId        String   @map("resume_id")
   userId          String   @map("user_id")
-  
+
   // Version info
   versionNumber   Int      @map("version_number")
   versionName     String?  @map("version_name")
-  
+
   // Snapshot of resume at this version
   content         Json
   templateId      String   @map("template_id")
-  
+
   // Metadata
   createdAt       DateTime @default(now()) @map("created_at")
   createdBy       String?  @map("created_by")
-  
+
   // Change tracking
   changesSummary  String?  @map("changes_summary")
   diff            Json?
-  
+
   // Relations
   resume          Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  
+
   @@unique([resumeId, versionNumber])
   @@index([resumeId])
   @@index([userId])
@@ -226,35 +228,35 @@ model Template {
   id              String   @id
   name            String
   description     String?
-  
+
   // Template configuration
   config          Json     @default("{\"layout\":{},\"styling\":{},\"sections\":[]}")
-  
+
   // Template metadata
   thumbnailUrl    String?  @map("thumbnail_url")
   previewUrl      String?  @map("preview_url")
   category        String?
   tags            String[]
-  
+
   // ATS info
   atsScore        Int?     @map("ats_score")
   isAtsFriendly   Boolean  @default(true) @map("is_ats_friendly")
-  
+
   // Access control
   isPremium       Boolean  @default(false) @map("is_premium")
   requiredTier    String   @default("free") @map("required_tier")
-  
+
   // Usage stats
   usageCount      Int      @default(0) @map("usage_count")
-  
+
   // Metadata
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   isActive        Boolean  @default(true) @map("is_active")
-  
+
   // Ordering
   sortOrder       Int      @default(0) @map("sort_order")
-  
+
   @@index([category])
   @@index([isPremium])
   @@index([sortOrder])
@@ -269,26 +271,26 @@ model SubscriptionPlan {
   id                    String   @id
   name                  String
   description           String?
-  
+
   // Pricing
   priceMonthly          Decimal  @map("price_monthly") @db.Decimal(10, 2)
   priceYearly           Decimal? @map("price_yearly") @db.Decimal(10, 2)
   currency              String   @default("USD")
-  
+
   // Features (JSONB)
   features              Json     @default("{\"maxResumes\":5,\"maxExportsPerMonth\":10,\"premiumTemplates\":false}")
-  
+
   // Stripe integration
   stripePriceIdMonthly  String?  @map("stripe_price_id_monthly")
   stripePriceIdYearly   String?  @map("stripe_price_id_yearly")
   stripeProductId       String?  @map("stripe_product_id")
-  
+
   // Metadata
   isActive              Boolean  @default(true) @map("is_active")
   sortOrder             Int      @default(0) @map("sort_order")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
-  
+
   @@map("subscription_plans")
 }
 
@@ -296,11 +298,11 @@ model Subscription {
   id                    String    @id @default(uuid())
   userId                String    @map("user_id")
   planId                String    @map("plan_id")
-  
+
   // Subscription details
   status                String    @default("active") // active, cancelled, expired, past_due, trial
   billingCycle          String?   @map("billing_cycle") // monthly, yearly
-  
+
   // Dates
   startedAt             DateTime  @default(now()) @map("started_at")
   currentPeriodStart    DateTime  @map("current_period_start")
@@ -308,19 +310,19 @@ model Subscription {
   cancelledAt           DateTime? @map("cancelled_at")
   trialStart            DateTime? @map("trial_start")
   trialEnd              DateTime? @map("trial_end")
-  
+
   // Stripe integration
   stripeSubscriptionId  String?   @unique @map("stripe_subscription_id")
   stripeCustomerId      String?   @map("stripe_customer_id")
-  
+
   // Metadata
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
-  
+
   // Relations
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   payments              Payment[]
-  
+
   @@index([userId])
   @@index([status])
   @@index([stripeSubscriptionId])
@@ -332,34 +334,34 @@ model Payment {
   id                    String    @id @default(uuid())
   userId                String    @map("user_id")
   subscriptionId        String?   @map("subscription_id")
-  
+
   // Payment details
   amount                Decimal   @db.Decimal(10, 2)
   currency              String    @default("USD")
   status                String    // pending, succeeded, failed, refunded
-  
+
   // Payment method
   paymentMethod         String?   @map("payment_method")
   paymentProviderId     String?   @map("payment_provider_id")
-  
+
   // Stripe integration
   stripePaymentIntentId String?   @unique @map("stripe_payment_intent_id")
   stripeChargeId        String?   @map("stripe_charge_id")
-  
+
   // Metadata
   description           String?
   metadata              Json      @default("{}")
-  
+
   // Dates
   paidAt                DateTime? @map("paid_at")
   refundedAt            DateTime? @map("refunded_at")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
-  
+
   // Relations
   user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscription          Subscription? @relation(fields: [subscriptionId], references: [id])
-  
+
   @@index([userId])
   @@index([subscriptionId])
   @@index([status])
@@ -375,49 +377,49 @@ model Payment {
 model AdminUser {
   id          String    @id
   role        String    // super_admin, admin, moderator, support
-  
+
   // Permissions (JSONB)
   permissions Json      @default("{\"manageUsers\":false,\"manageSubscriptions\":false}")
-  
+
   // Metadata
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   lastLoginAt DateTime? @map("last_login_at")
   isActive    Boolean   @default(true) @map("is_active")
-  
+
   @@index([role])
   @@map("admin_users")
 }
 
 model AuditLog {
   id              String   @id @default(uuid())
-  
+
   // Event details
   eventType       String   @map("event_type")
   eventCategory   String   @map("event_category") // auth, resume, subscription, payment, admin, system
-  
+
   // Actor
   userId          String?  @map("user_id")
   adminId         String?  @map("admin_id")
   ipAddress       String?  @map("ip_address")
   userAgent       String?  @map("user_agent")
-  
+
   // Event data
   resourceType    String?  @map("resource_type")
   resourceId      String?  @map("resource_id")
   action          String?
-  
+
   // Details
   details         Json     @default("{}")
   metadata        Json     @default("{}")
-  
+
   // Status
   status          String?  // success, failure, error
   errorMessage    String?  @map("error_message")
-  
+
   // Timestamp
   createdAt       DateTime @default(now()) @map("created_at")
-  
+
   @@index([userId])
   @@index([eventType])
   @@index([eventCategory])
@@ -430,20 +432,20 @@ model FeatureFlag {
   id                  String   @id
   name                String
   description         String?
-  
+
   // Flag configuration
   isEnabled           Boolean  @default(false) @map("is_enabled")
   rolloutPercentage   Int      @default(0) @map("rollout_percentage")
-  
+
   // Targeting
   targetUsers         String[] @map("target_users")
   targetTiers         String[] @map("target_tiers")
-  
+
   // Metadata
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
   createdBy           String?  @map("created_by")
-  
+
   @@map("feature_flags")
 }
 ```
@@ -564,8 +566,8 @@ async function main() {
         sortOrder: 3,
       },
       {
-        id: 'abhiram',
-        name: 'Abhiram',
+        id: 'professional',
+        name: 'Professional',
         description: 'Professional backend engineer template',
         isPremium: false,
         atsScore: 96,
@@ -730,7 +732,7 @@ await prisma.$transaction(async (tx) => {
   const user = await tx.user.create({
     data: { email: 'user@example.com' },
   });
-  
+
   await tx.resume.create({
     data: {
       userId: user.id,
