@@ -7,6 +7,7 @@ inclusion: always
 ## Overview
 
 This document defines the complete database schema for the Resume Builder application using PostgreSQL (Supabase). The schema is designed for:
+
 - Multi-tenancy with Row Level Security (RLS)
 - Flexible resume storage using JSONB
 - Efficient querying and indexing
@@ -63,18 +64,18 @@ CREATE TABLE users (
   email VARCHAR(255) NOT NULL UNIQUE,
   full_name VARCHAR(255),
   avatar_url TEXT,
-  
+
   -- Subscription info
   subscription_tier VARCHAR(50) DEFAULT 'free' CHECK (subscription_tier IN ('free', 'pro', 'enterprise')),
   subscription_status VARCHAR(50) DEFAULT 'active' CHECK (subscription_status IN ('active', 'cancelled', 'expired', 'trial')),
   subscription_expires_at TIMESTAMPTZ,
   trial_ends_at TIMESTAMPTZ,
-  
+
   -- Usage tracking
   resume_count INTEGER DEFAULT 0,
   export_count INTEGER DEFAULT 0,
   storage_used_bytes BIGINT DEFAULT 0,
-  
+
   -- Preferences
   preferences JSONB DEFAULT '{
     "theme": "light",
@@ -82,13 +83,13 @@ CREATE TABLE users (
     "auto_save": true,
     "email_notifications": true
   }'::jsonb,
-  
+
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   last_login_at TIMESTAMPTZ,
   is_active BOOLEAN DEFAULT true,
-  
+
   -- Indexes
   CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
@@ -134,12 +135,12 @@ Stores resume documents with flexible JSONB structure.
 CREATE TABLE resumes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  
+
   -- Resume metadata
   title VARCHAR(255) NOT NULL DEFAULT 'Untitled Resume',
   description TEXT,
   template_id VARCHAR(50) NOT NULL DEFAULT 'modern',
-  
+
   -- Resume content (JSONB for flexibility)
   content JSONB NOT NULL DEFAULT '{
     "personalInfo": {},
@@ -147,32 +148,32 @@ CREATE TABLE resumes (
     "layout": {},
     "metadata": {}
   }'::jsonb,
-  
+
   -- Version control
   version INTEGER DEFAULT 1,
   is_current_version BOOLEAN DEFAULT true,
   parent_version_id UUID REFERENCES resumes(id),
-  
+
   -- Status
   status VARCHAR(50) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
   is_public BOOLEAN DEFAULT false,
   public_slug VARCHAR(255) UNIQUE,
-  
+
   -- ATS metrics
   ats_score INTEGER CHECK (ats_score >= 0 AND ats_score <= 100),
   ats_issues JSONB DEFAULT '[]'::jsonb,
   last_ats_check_at TIMESTAMPTZ,
-  
+
   -- Analytics
   view_count INTEGER DEFAULT 0,
   export_count INTEGER DEFAULT 0,
   last_exported_at TIMESTAMPTZ,
-  
+
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   deleted_at TIMESTAMPTZ,
-  
+
   -- Constraints
   CONSTRAINT valid_ats_score CHECK (ats_score IS NULL OR (ats_score >= 0 AND ats_score <= 100))
 );
@@ -190,8 +191,8 @@ CREATE INDEX idx_resumes_content_gin ON resumes USING GIN (content);
 
 -- Full-text search index
 CREATE INDEX idx_resumes_content_fulltext ON resumes USING GIN (
-  to_tsvector('english', 
-    COALESCE(title, '') || ' ' || 
+  to_tsvector('english',
+    COALESCE(title, '') || ' ' ||
     COALESCE(content->>'personalInfo', '') || ' ' ||
     COALESCE(content->>'sections', '')
   )
@@ -234,23 +235,23 @@ CREATE TABLE resume_versions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   resume_id UUID NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  
+
   -- Version info
   version_number INTEGER NOT NULL,
   version_name VARCHAR(255),
-  
+
   -- Snapshot of resume at this version
   content JSONB NOT NULL,
   template_id VARCHAR(50) NOT NULL,
-  
+
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
   created_by UUID REFERENCES users(id),
-  
+
   -- Change tracking
   changes_summary TEXT,
   diff JSONB,
-  
+
   UNIQUE(resume_id, version_number)
 );
 
@@ -282,36 +283,36 @@ CREATE TABLE templates (
   id VARCHAR(50) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  
+
   -- Template configuration
   config JSONB NOT NULL DEFAULT '{
     "layout": {},
     "styling": {},
     "sections": []
   }'::jsonb,
-  
+
   -- Template metadata
   thumbnail_url TEXT,
   preview_url TEXT,
   category VARCHAR(50),
   tags TEXT[],
-  
+
   -- ATS info
   ats_score INTEGER CHECK (ats_score >= 0 AND ats_score <= 100),
   is_ats_friendly BOOLEAN DEFAULT true,
-  
+
   -- Access control
   is_premium BOOLEAN DEFAULT false,
   required_tier VARCHAR(50) DEFAULT 'free' CHECK (required_tier IN ('free', 'pro', 'enterprise')),
-  
+
   -- Usage stats
   usage_count INTEGER DEFAULT 0,
-  
+
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   is_active BOOLEAN DEFAULT true,
-  
+
   -- Ordering
   sort_order INTEGER DEFAULT 0
 );
@@ -332,7 +333,7 @@ INSERT INTO templates (id, name, description, is_premium, ats_score) VALUES
   ('classic', 'Classic', 'Traditional chronological format', false, 98),
   ('modern', 'Modern', 'Clean, contemporary design', false, 95),
   ('minimal', 'Minimal', 'Ultra-clean, space-efficient', false, 97),
-  ('abhiram', 'Abhiram', 'Professional backend engineer template', false, 96);
+  ('professional', 'Professional', 'Professional backend engineer template', false, 96);
 ```
 
 ---
@@ -348,12 +349,12 @@ CREATE TABLE subscription_plans (
   id VARCHAR(50) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  
+
   -- Pricing
   price_monthly DECIMAL(10, 2) NOT NULL,
   price_yearly DECIMAL(10, 2),
   currency VARCHAR(3) DEFAULT 'USD',
-  
+
   -- Features
   features JSONB NOT NULL DEFAULT '{
     "max_resumes": 5,
@@ -363,12 +364,12 @@ CREATE TABLE subscription_plans (
     "priority_support": false,
     "analytics": false
   }'::jsonb,
-  
+
   -- Stripe integration
   stripe_price_id_monthly VARCHAR(255),
   stripe_price_id_yearly VARCHAR(255),
   stripe_product_id VARCHAR(255),
-  
+
   -- Metadata
   is_active BOOLEAN DEFAULT true,
   sort_order INTEGER DEFAULT 0,
@@ -417,11 +418,11 @@ CREATE TABLE subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   plan_id VARCHAR(50) NOT NULL REFERENCES subscription_plans(id),
-  
+
   -- Subscription details
   status VARCHAR(50) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'expired', 'past_due', 'trial')),
   billing_cycle VARCHAR(20) CHECK (billing_cycle IN ('monthly', 'yearly')),
-  
+
   -- Dates
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   current_period_start TIMESTAMPTZ NOT NULL,
@@ -429,15 +430,15 @@ CREATE TABLE subscriptions (
   cancelled_at TIMESTAMPTZ,
   trial_start TIMESTAMPTZ,
   trial_end TIMESTAMPTZ,
-  
+
   -- Stripe integration
   stripe_subscription_id VARCHAR(255) UNIQUE,
   stripe_customer_id VARCHAR(255),
-  
+
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
+
   UNIQUE(user_id, plan_id, status)
 );
 
@@ -472,24 +473,24 @@ CREATE TABLE payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   subscription_id UUID REFERENCES subscriptions(id),
-  
+
   -- Payment details
   amount DECIMAL(10, 2) NOT NULL,
   currency VARCHAR(3) DEFAULT 'USD',
   status VARCHAR(50) NOT NULL CHECK (status IN ('pending', 'succeeded', 'failed', 'refunded')),
-  
+
   -- Payment method
   payment_method VARCHAR(50) CHECK (payment_method IN ('stripe', 'paypal', 'credit_card')),
   payment_provider_id VARCHAR(255),
-  
+
   -- Stripe integration
   stripe_payment_intent_id VARCHAR(255) UNIQUE,
   stripe_charge_id VARCHAR(255),
-  
+
   -- Metadata
   description TEXT,
   metadata JSONB DEFAULT '{}'::jsonb,
-  
+
   -- Dates
   paid_at TIMESTAMPTZ,
   refunded_at TIMESTAMPTZ,
@@ -530,7 +531,7 @@ Tracks admin users and their permissions.
 CREATE TABLE admin_users (
   id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   role VARCHAR(50) NOT NULL CHECK (role IN ('super_admin', 'admin', 'moderator', 'support')),
-  
+
   -- Permissions
   permissions JSONB DEFAULT '{
     "manage_users": false,
@@ -539,7 +540,7 @@ CREATE TABLE admin_users (
     "view_analytics": false,
     "manage_templates": false
   }'::jsonb,
-  
+
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -567,30 +568,30 @@ Tracks important system events for security and debugging.
 ```sql
 CREATE TABLE audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
+
   -- Event details
   event_type VARCHAR(100) NOT NULL,
   event_category VARCHAR(50) CHECK (event_category IN ('auth', 'resume', 'subscription', 'payment', 'admin', 'system')),
-  
+
   -- Actor
   user_id UUID REFERENCES users(id),
   admin_id UUID REFERENCES admin_users(id),
   ip_address INET,
   user_agent TEXT,
-  
+
   -- Event data
   resource_type VARCHAR(50),
   resource_id UUID,
   action VARCHAR(50),
-  
+
   -- Details
   details JSONB DEFAULT '{}'::jsonb,
   metadata JSONB DEFAULT '{}'::jsonb,
-  
+
   -- Status
   status VARCHAR(50) CHECK (status IN ('success', 'failure', 'error')),
   error_message TEXT,
-  
+
   -- Timestamp
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -618,15 +619,15 @@ CREATE TABLE feature_flags (
   id VARCHAR(100) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  
+
   -- Flag configuration
   is_enabled BOOLEAN DEFAULT false,
   rollout_percentage INTEGER DEFAULT 0 CHECK (rollout_percentage >= 0 AND rollout_percentage <= 100),
-  
+
   -- Targeting
   target_users UUID[],
   target_tiers VARCHAR(50)[],
-  
+
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -651,7 +652,7 @@ Aggregated user statistics for admin dashboard.
 
 ```sql
 CREATE VIEW user_stats_view AS
-SELECT 
+SELECT
   u.id,
   u.email,
   u.full_name,
@@ -677,7 +678,7 @@ Revenue analytics for admin dashboard.
 
 ```sql
 CREATE VIEW subscription_revenue_view AS
-SELECT 
+SELECT
   DATE_TRUNC('month', p.created_at) as month,
   sp.name as plan_name,
   COUNT(DISTINCT p.user_id) as paying_users,
@@ -716,7 +717,7 @@ BEGIN
   FROM users u
   JOIN subscription_plans sp ON u.subscription_tier = sp.id
   WHERE u.id = p_user_id;
-  
+
   -- Check specific limit
   CASE p_limit_type
     WHEN 'max_resumes' THEN
@@ -724,20 +725,20 @@ BEGIN
       SELECT COUNT(*) INTO v_current_count
       FROM resumes
       WHERE user_id = p_user_id AND deleted_at IS NULL;
-      
+
     WHEN 'max_exports_per_month' THEN
       v_limit := (v_plan_features->>'max_exports_per_month')::INTEGER;
       SELECT SUM(export_count) INTO v_current_count
       FROM resumes
-      WHERE user_id = p_user_id 
+      WHERE user_id = p_user_id
         AND last_exported_at >= DATE_TRUNC('month', NOW());
   END CASE;
-  
+
   -- -1 means unlimited
   IF v_limit = -1 THEN
     RETURN true;
   END IF;
-  
+
   RETURN v_current_count < v_limit;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -758,18 +759,18 @@ BEGIN
   IF NOT (p_resume_content->'sections' @> '[{"type": "experience"}]') THEN
     v_score := v_score - 20;
   END IF;
-  
+
   IF NOT (p_resume_content->'sections' @> '[{"type": "education"}]') THEN
     v_score := v_score - 10;
   END IF;
-  
+
   -- Check for contact info
   IF (p_resume_content->'personalInfo'->>'email') IS NULL THEN
     v_score := v_score - 15;
   END IF;
-  
+
   -- More validation rules...
-  
+
   RETURN GREATEST(0, v_score);
 END;
 $$ LANGUAGE plpgsql;
@@ -859,12 +860,12 @@ LIMIT $2 OFFSET $3;
 -- Search resumes by content
 SELECT id, title, template_id
 FROM resumes
-WHERE user_id = $1 
+WHERE user_id = $1
   AND to_tsvector('english', title || ' ' || content::text) @@ to_tsquery('english', $2)
   AND deleted_at IS NULL;
 
 -- Get subscription revenue
-SELECT 
+SELECT
   DATE_TRUNC('month', created_at) as month,
   SUM(amount) as revenue,
   COUNT(*) as transactions
@@ -902,7 +903,7 @@ All tables have RLS enabled to ensure users can only access their own data.
 
 ```sql
 -- Check table sizes
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
@@ -911,7 +912,7 @@ WHERE schemaname = 'public'
 ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 
 -- Check slow queries
-SELECT 
+SELECT
   query,
   calls,
   total_time,
@@ -921,7 +922,7 @@ ORDER BY mean_time DESC
 LIMIT 10;
 
 -- Check index usage
-SELECT 
+SELECT
   schemaname,
   tablename,
   indexname,
