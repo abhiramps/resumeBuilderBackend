@@ -30,6 +30,7 @@ provider:
       allowedOrigins:
         - https://resume-builder-seven-mu.vercel.app
         - https://resumebuildr.org
+        - https://www.resumebuildr.org
         - http://localhost:3000
       allowedHeaders:
         - Content-Type
