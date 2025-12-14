@@ -10,6 +10,7 @@
     "dev": "nodemon",
     "dev:watch": "nodemon",
     "dev:direct": "serverless offline",
+    "dev:local": "DOTENV_CONFIG_PATH=.env.local node -r dotenv/config node_modules/.bin/nodemon",
     "build": "prisma generate && tsc",
     "deploy:dev": "npm run build && DOTENV_CONFIG_PATH=.env.dev node -r dotenv/config node_modules/.bin/serverless deploy --stage dev",
     "deploy:prod": "npm run build && DOTENV_CONFIG_PATH=.env.prod node -r dotenv/config node_modules/.bin/serverless deploy --stage production",
@@ -25,6 +26,7 @@
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+    "prisma:studio:local": "DOTENV_CONFIG_PATH=.env.local node -r dotenv/config node_modules/.bin/prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
     "sync:users": "ts-node scripts/sync-users.ts"
   },
