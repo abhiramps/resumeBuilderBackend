@@ -64,7 +64,8 @@ router.post('/reset-password', validateRequest(resetPasswordSchema), async (req,
 router.get('/oauth/:provider', async (req, res, next) => {
     try {
         const { provider } = req.params;
-        const result = await authService.signInWithOAuth(provider as 'google' | 'github');
+        const { redirectUrl } = req.query;
+        const result = await authService.signInWithOAuth(provider as 'google' | 'github', redirectUrl as string);
         res.json(result);
     } catch (error) {
         next(error);
@@ -85,6 +86,11 @@ router.get('/oauth/callback', async (req, res, next) => {
 // Get current session
 router.get('/session', authenticate, async (req: AuthRequest, res, next) => {
     try {
+        if (req.user) {
+            // Ensure user exists in our DB (sync with Supabase)
+            // Use rawUser if available to get full metadata
+            await authService.syncUser(req.rawUser || req.user);
+        }
         res.json({
             user: req.user,
         });

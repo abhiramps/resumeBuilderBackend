@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
         email: string;
         role?: string;
     };
+    rawUser?: any;
 }
 
 export const authenticate = async (
@@ -19,6 +20,7 @@ export const authenticate = async (
         const authHeader = req.headers.authorization;
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.log('Auth Middleware: Missing or invalid header');
             throw new UnauthorizedError('Missing or invalid authorization header');
         }
 
@@ -28,17 +30,24 @@ export const authenticate = async (
         const { data: { user }, error } = await supabase.auth.getUser(token);
 
         if (error || !user) {
+            console.error('Auth Middleware: Verification failed', error);
             throw new UnauthorizedError('Invalid or expired token');
         }
 
         // Attach user to request
+        // console.log('Auth Middleware: User verified', user.id);
         req.user = {
             id: user.id,
             email: user.email!,
+            // Pass the full user object (or metadata) if needed by syncUser
+            // For now, we only need basic fields, but syncUser needs metadata for name/avatar
+            // Let's expand this to include metadata
         };
+        (req as any).rawUser = user;
 
         next();
     } catch (error) {
+        console.error('Auth Middleware: Error', error);
         next(error);
     }
 };

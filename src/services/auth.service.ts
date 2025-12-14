@@ -95,13 +95,17 @@ export class AuthService {
         if (error) throw error;
     }
 
-    async signInWithOAuth(provider: 'google' | 'github'): Promise<{ url: string }> {
+    async signInWithOAuth(provider: 'google' | 'github', redirectUrl?: string): Promise<{ url: string }> {
+        const redirectTo = redirectUrl || `${config.frontend.url}/auth/callback`;
+        
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider,
             options: {
-                redirectTo: `${config.frontend.url}/auth/callback`,
+                redirectTo,
             },
         });
+        console.log("error",error);
+        console.log("data",data);
 
         if (error) throw error;
 
@@ -113,29 +117,47 @@ export class AuthService {
 
         if (error) throw error;
 
-        // Create or update user profile using Prisma
-        // OAuth users might not have gone through our signup flow, so we use upsert
         if (data.user) {
-            await prisma.user.upsert({
-                where: { id: data.user.id },
-                update: {
-                    lastLoginAt: new Date(),
-                    avatarUrl: data.user.user_metadata.avatar_url,
-                },
-                create: {
-                    id: data.user.id,
-                    email: data.user.email!,
-                    fullName: data.user.user_metadata.full_name || data.user.email!,
-                    avatarUrl: data.user.user_metadata.avatar_url,
-                    lastLoginAt: new Date(),
-                },
-            });
+            await this.syncUser(data.user);
         }
 
         return {
             user: data.user,
             session: data.session,
         };
+    }
+
+    async syncUser(user: any): Promise<void> {
+        try {
+            console.log('Backend syncUser called for:', user.id, user.email);
+            const dataToSync = {
+                id: user.id,
+                email: user.email!,
+                fullName: user.user_metadata?.full_name || user.fullName || user.email!,
+                avatarUrl: user.user_metadata?.avatar_url || user.avatarUrl,
+            };
+            // console.log('Syncing data:', dataToSync);
+
+            await prisma.user.upsert({
+                where: { id: user.id },
+                update: {
+                    lastLoginAt: new Date(),
+                    avatarUrl: dataToSync.avatarUrl,
+                },
+                create: {
+                    id: dataToSync.id,
+                    email: dataToSync.email,
+                    fullName: dataToSync.fullName,
+                    avatarUrl: dataToSync.avatarUrl,
+                    lastLoginAt: new Date(),
+                },
+            });
+            console.log('User synced successfully');
+        } catch (error) {
+            console.error('Failed to sync user with Prisma:', error);
+            // Don't throw, just log. This prevents the session endpoint from failing completely
+            // if DB is down or schema mismatch.
+        }
     }
 
     async refreshSession(refreshToken: string): Promise<AuthResponse> {
