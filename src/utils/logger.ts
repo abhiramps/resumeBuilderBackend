@@ -38,8 +38,9 @@ export const logger = winston.createLogger({
     ],
 });
 
-// Add file transport in production
-if (config.env === 'production') {
+// Add file transport in production only if not running in AWS Lambda
+// Lambda has a read-only filesystem (except /tmp) and CloudWatch captures stdout/stderr automatically
+if (config.env === 'production' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
     logger.add(
         new winston.transports.File({
             filename: 'logs/error.log',
