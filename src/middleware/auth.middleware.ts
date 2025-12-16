@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../utils/supabase';
 import { UnauthorizedError } from '../utils/errors';
+import { User } from '@supabase/supabase-js';
 
 export interface AuthRequest extends Request {
     user?: {
@@ -8,6 +9,7 @@ export interface AuthRequest extends Request {
         email: string;
         role?: string;
     };
+    supabaseUser?: User;
 }
 
 export const authenticate = async (
@@ -36,6 +38,7 @@ export const authenticate = async (
             id: user.id,
             email: user.email!,
         };
+        req.supabaseUser = user;
 
         next();
     } catch (error) {
