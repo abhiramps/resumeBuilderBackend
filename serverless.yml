@@ -115,6 +115,15 @@ functions:
           path: /health
           method: GET
 
+  exportPdf:
+    handler: dist/handlers/export.handler
+    memorySize: 2048 # Chromium needs more memory
+    timeout: 30 # Generating PDF might take a few seconds
+    events:
+      - httpApi:
+          path: /resumes/export
+          method: POST
+
 plugins:
   - serverless-offline
 
@@ -143,3 +152,5 @@ package:
     - '!.github/**'
     - '!*.md'
     - '!.env*'
+    # Ensure chromium is included
+    - 'node_modules/@sparticuz/chromium/**'
