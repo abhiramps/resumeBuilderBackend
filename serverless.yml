@@ -4,6 +4,17 @@ frameworkVersion: '4'
 
 useDotenv: true
 
+build:
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: false
+    exclude:
+      - '@sparticuz/chromium'
+      - 'aws-sdk'
+    target: node22
+    platform: node
+
 provider:
   name: aws
   runtime: nodejs22.x
@@ -56,7 +67,7 @@ provider:
 
 functions:
   auth:
-    handler: dist/handlers/auth.handler
+    handler: src/handlers/auth.handler
     events:
       - httpApi:
           path: /auth/{proxy+}
@@ -66,7 +77,7 @@ functions:
           method: ANY
 
   users:
-    handler: dist/handlers/users.handler
+    handler: src/handlers/users.handler
     events:
       - httpApi:
           path: /users/{proxy+}
@@ -76,7 +87,7 @@ functions:
           method: ANY
 
   resumes:
-    handler: dist/handlers/resumes.handler
+    handler: src/handlers/resumes.handler
     events:
       - httpApi:
           path: /resumes/{proxy+}
@@ -86,7 +97,7 @@ functions:
           method: ANY
 
   versions:
-    handler: dist/handlers/versions.handler
+    handler: src/handlers/versions.handler
     events:
       - httpApi:
           path: /resumes/{resumeId}/versions/{proxy+}
@@ -96,7 +107,7 @@ functions:
           method: ANY
 
   sharing:
-    handler: dist/handlers/sharing.handler
+    handler: src/handlers/sharing.handler
     events:
       - httpApi:
           path: /resumes/{id}/share
@@ -109,16 +120,19 @@ functions:
           method: GET
 
   health:
-    handler: dist/handlers/health.handler
+    handler: src/handlers/health.handler
     events:
       - httpApi:
           path: /health
           method: GET
 
   exportPdf:
-    handler: dist/handlers/export.handler
+    handler: src/handlers/export.handler
     memorySize: 2048 # Chromium needs more memory
     timeout: 30 # Generating PDF might take a few seconds
+    layers:
+      # Use pre-built Chromium layer instead of bundling
+      - arn:aws:lambda:ap-south-1:764866452798:layer:chrome-aws-lambda:53
     events:
       - httpApi:
           path: /resumes/export
@@ -133,17 +147,8 @@ custom:
     noPrependStageInUrl: true
 
 package:
+  individually: true
   patterns:
-    # Exclude unnecessary Prisma engine binaries (keep only rhel for Lambda)
-    - '!node_modules/.prisma/client/libquery_engine-darwin*'
-    - '!node_modules/.prisma/client/libquery_engine-debian*'
-    - '!node_modules/.prisma/client/libquery_engine-linux*'
-    - '!node_modules/.prisma/client/libquery_engine-windows*'
-    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
-    - '!node_modules/prisma/libquery_engine-*'
-    - '!node_modules/@prisma/engines/**'
-    # Exclude WASM engine (not needed for Node.js Lambda)
-    - '!node_modules/.prisma/client/query_engine_bg.wasm'
     # Exclude test files and development artifacts
     - '!tests/**'
     - '!**/*.test.ts'
@@ -152,5 +157,3 @@ package:
     - '!.github/**'
     - '!*.md'
     - '!.env*'
-    # Ensure chromium is included
-    - 'node_modules/@sparticuz/chromium/**'

@@ -11,7 +11,7 @@
     "dev:watch": "nodemon",
     "dev:direct": "serverless offline",
     "dev:local": "DOTENV_CONFIG_PATH=.env.local node -r dotenv/config node_modules/.bin/nodemon",
-    "build": "prisma generate && tsc",
+    "build": "prisma generate",
     "deploy:dev": "npm run build && DOTENV_CONFIG_PATH=.env.dev node -r dotenv/config node_modules/.bin/serverless deploy --stage dev",
     "deploy:prod": "npm run build && DOTENV_CONFIG_PATH=.env.prod node -r dotenv/config node_modules/.bin/serverless deploy --stage production",
     "remove:dev": "DOTENV_CONFIG_PATH=.env.dev node -r dotenv/config node_modules/.bin/serverless remove --stage dev",
@@ -36,7 +36,6 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "^7.0.0",
-    "@sparticuz/chromium": "^143.0.0",
     "@supabase/supabase-js": "^2.78.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
