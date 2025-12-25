@@ -10,8 +10,9 @@ build:
     minify: true
     sourcemap: false
     exclude:
-      - '@sparticuz/chromium'
       - 'aws-sdk'
+    external:
+      - '@sparticuz/chromium'
     target: node22
     platform: node
 
@@ -128,11 +129,11 @@ functions:
 
   exportPdf:
     handler: src/handlers/export.handler
-    memorySize: 2048 # Chromium needs more memory
+    memorySize: 3008 # Chromium needs more memory (max for non-provisioned)
     timeout: 30 # Generating PDF might take a few seconds
+    ephemeralStorageSize: 2048 # Increase tmp storage for Chromium extraction
     layers:
-      # Use pre-built Chromium layer instead of bundling
-      - arn:aws:lambda:ap-south-1:764866452798:layer:chrome-aws-lambda:53
+      - arn:aws:lambda:ap-south-1:407800164427:layer:chromium-sparticuz:2
     events:
       - httpApi:
           path: /resumes/export

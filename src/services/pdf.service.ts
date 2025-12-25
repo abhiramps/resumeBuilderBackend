@@ -10,18 +10,31 @@ export class PdfService {
     let args: string[] = [];
 
     if (isLambda) {
-      // When using Lambda Layer, Chromium is at /opt/chromium
-      executablePath = '/opt/chromium';
-      args = [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--single-process',
-        '--no-zygote',
-        '--disable-web-security',
-      ];
+      console.log('Running in Lambda environment');
+
+      // Use @sparticuz/chromium for Lambda (from Layer)
+      try {
+        const chromium = await import('@sparticuz/chromium');
+        executablePath = await chromium.default.executablePath();
+        console.log('Chromium executable path:', executablePath);
+
+        if (!executablePath) {
+          throw new Error('Chromium executable path is undefined');
+        }
+
+        args = [
+          ...chromium.default.args,
+          '--disable-dev-shm-usage', // Important for Lambda
+          '--single-process',
+        ];
+
+        console.log('Chromium args:', args);
+      } catch (error) {
+        console.error('Error getting Chromium executable path:', error);
+        throw error;
+      }
     } else {
+      console.log('Running in local environment');
       // Local development fallback paths
       const platform = process.platform;
       if (platform === 'darwin') {
@@ -32,6 +45,8 @@ export class PdfService {
         executablePath = '/usr/bin/google-chrome'; // Linux fallback
       }
     }
+
+    console.log('Launching browser with executablePath:', executablePath);
 
     return puppeteer.launch({
       args,
