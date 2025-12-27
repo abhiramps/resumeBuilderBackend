@@ -81,6 +81,8 @@ export class PdfService {
                 padding: 0;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
               }
               /* Inject received CSS */
               ${css}
@@ -92,11 +94,14 @@ export class PdfService {
         </html>
       `;
 
-      // Set content
+      // Set content and wait for fonts to load
       await page.setContent(fullHtml, {
         waitUntil: 'networkidle0',
         timeout: 30000
       });
+
+      // Wait for fonts to be loaded
+      await page.evaluateHandle('document.fonts.ready');
 
       // Generate PDF
       // We want standard Letter size, no headers/footers, and print background colors
