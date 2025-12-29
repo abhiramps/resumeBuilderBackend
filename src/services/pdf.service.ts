@@ -1,17 +1,40 @@
 
 import puppeteer, { Browser } from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
 
 export class PdfService {
   private static async getBrowser(): Promise<Browser> {
     const isOffline = process.env.IS_OFFLINE;
     const isLambda = !isOffline && (process.env.AWS_LAMBDA_FUNCTION_VERSION || process.env.AWS_EXECUTION_ENV);
-    
+
     let executablePath: string;
-    
+    let args: string[] = [];
+
     if (isLambda) {
-      executablePath = await chromium.executablePath();
+      console.log('Running in Lambda environment');
+
+      // Use @sparticuz/chromium for Lambda (from Layer)
+      try {
+        const chromium = await import('@sparticuz/chromium');
+        executablePath = await chromium.default.executablePath();
+        console.log('Chromium executable path:', executablePath);
+
+        if (!executablePath) {
+          throw new Error('Chromium executable path is undefined');
+        }
+
+        args = [
+          ...chromium.default.args,
+          '--disable-dev-shm-usage', // Important for Lambda
+          '--single-process',
+        ];
+
+        console.log('Chromium args:', args);
+      } catch (error) {
+        console.error('Error getting Chromium executable path:', error);
+        throw error;
+      }
     } else {
+      console.log('Running in local environment');
       // Local development fallback paths
       const platform = process.platform;
       if (platform === 'darwin') {
@@ -23,8 +46,10 @@ export class PdfService {
       }
     }
 
+    console.log('Launching browser with executablePath:', executablePath);
+
     return puppeteer.launch({
-      args: isLambda ? chromium.args : [],
+      args,
       defaultViewport: { width: 1920, height: 1080 },
       executablePath,
       headless: true,
@@ -56,6 +81,8 @@ export class PdfService {
                 padding: 0;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
               }
               /* Inject received CSS */
               ${css}
@@ -67,11 +94,14 @@ export class PdfService {
         </html>
       `;
 
-      // Set content
-      await page.setContent(fullHtml, { 
+      // Set content and wait for fonts to load
+      await page.setContent(fullHtml, {
         waitUntil: 'networkidle0',
-        timeout: 30000 
+        timeout: 30000
       });
+
+      // Wait for fonts to be loaded
+      await page.evaluateHandle('document.fonts.ready');
 
       // Generate PDF
       // We want standard Letter size, no headers/footers, and print background colors
@@ -82,10 +112,10 @@ export class PdfService {
         printBackground: true,
         displayHeaderFooter: false,
         margin: {
-            top: '0px',
-            bottom: '0px',
-            left: '0px',
-            right: '0px'
+          top: '0px',
+          bottom: '0px',
+          left: '0px',
+          right: '0px'
         },
         preferCSSPageSize: true // Respect @page rules from CSS
       });
