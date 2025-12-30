@@ -1,0 +1,126 @@
+%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/Resources <<
+/Font <<
+/F1 <<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+>>
+>>
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+
+4 0 obj
+<<
+/Length 800
+>>
+stream
+BT
+/F1 24 Tf
+50 750 Td
+(John Doe) Tj
+0 -30 Td
+/F1 14 Tf
+(Software Engineer) Tj
+0 -20 Td
+/F1 12 Tf
+(john.doe@email.com | +1-555-0123 | San Francisco, CA) Tj
+0 -40 Td
+/F1 16 Tf
+(PROFESSIONAL SUMMARY) Tj
+0 -20 Td
+/F1 11 Tf
+(Experienced software engineer with 5+ years building web applications.) Tj
+0 -15 Td
+(Proficient in React, Node.js, and cloud technologies.) Tj
+0 -40 Td
+/F1 16 Tf
+(EXPERIENCE) Tj
+0 -20 Td
+/F1 12 Tf
+(Senior Software Engineer) Tj
+0 -15 Td
+/F1 11 Tf
+(Tech Company Inc. | 2020-01 - Present) Tj
+0 -15 Td
+(- Built scalable web applications using React and Node.js) Tj
+0 -15 Td
+(- Improved performance by 40% through optimization) Tj
+0 -15 Td
+(- Led team of 3 developers on key projects) Tj
+0 -30 Td
+/F1 12 Tf
+(Software Engineer) Tj
+0 -15 Td
+/F1 11 Tf
+(Startup Co. | 2018-06 - 2019-12) Tj
+0 -15 Td
+(- Developed RESTful APIs and microservices) Tj
+0 -15 Td
+(- Implemented CI/CD pipelines) Tj
+0 -40 Td
+/F1 16 Tf
+(EDUCATION) Tj
+0 -20 Td
+/F1 12 Tf
+(Bachelor of Science in Computer Science) Tj
+0 -15 Td
+/F1 11 Tf
+(University of California | 2014-09 - 2018-05) Tj
+0 -15 Td
+(GPA: 3.8/4.0) Tj
+0 -40 Td
+/F1 16 Tf
+(SKILLS) Tj
+0 -20 Td
+/F1 11 Tf
+(Languages: JavaScript, TypeScript, Python, Java) Tj
+0 -15 Td
+(Frontend: React, Vue.js, HTML, CSS, Tailwind) Tj
+0 -15 Td
+(Backend: Node.js, Express, NestJS, Django) Tj
+0 -15 Td
+(Databases: PostgreSQL, MongoDB, Redis) Tj
+0 -15 Td
+(Cloud: AWS, Docker, Kubernetes) Tj
+ET
+endstream
+endobj
+
+xref
+0 5
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000317 00000 n
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+1167
+%%EOF

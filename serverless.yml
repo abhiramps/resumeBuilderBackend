@@ -25,6 +25,15 @@ provider:
     FRONTEND_URL: ${env:FRONTEND_URL}
     LOG_LEVEL: ${env:LOG_LEVEL}
     PORT: ${env:PORT}
+    # AI Import Configuration (optional - only needed for AI import feature)
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY, ''}
+    AI_MODEL: ${env:AI_MODEL, 'gpt-4o-mini'}
+    AI_TIMEOUT: ${env:AI_TIMEOUT, '20000'}
+    AI_MAX_RETRIES: ${env:AI_MAX_RETRIES, '2'}
+    MAX_FILE_SIZE: ${env:MAX_FILE_SIZE, '10485760'}
+    IMPORT_RATE_LIMIT: ${env:IMPORT_RATE_LIMIT, '5'}
+    IMPORT_RATE_WINDOW: ${env:IMPORT_RATE_WINDOW, '3600000'}
+    CACHE_TTL: ${env:CACHE_TTL, '3600000'}
   httpApi:
     cors:
       allowedOrigins:
@@ -123,6 +132,18 @@ functions:
       - httpApi:
           path: /resumes/export
           method: POST
+
+  importAI:
+    handler: dist/handlers/import-ai.handler
+    memorySize: 2048 # AI parsing and file processing need more memory
+    timeout: 30 # AI calls can take 13-25 seconds
+    events:
+      - httpApi:
+          path: /resumes/import-ai
+          method: POST
+      - httpApi:
+          path: /resumes/import-ai/status
+          method: GET
 
 plugins:
   - serverless-offline
