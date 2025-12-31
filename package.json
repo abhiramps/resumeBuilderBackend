@@ -31,12 +31,20 @@
     "sync:users": "ts-node scripts/sync-users.ts",
     "test:setup": "ts-node check-setup.ts",
     "test:create-pdf": "ts-node create-test-pdf.ts",
-    "test:import": "ts-node --transpile-only test-pdf-import.ts"
+    "test:import": "ts-node --transpile-only test-pdf-import.ts",
+    "test:llm-providers": "ts-node test-llm-providers.ts",
+    "test:llm-all": "ts-node test-llm-providers.ts --all",
+    "test:ollama-models": "ts-node test-ollama-models.ts",
+    "test:ollama-all": "ts-node test-ollama-models.ts --all",
+    "test:ollama-auto": "ts-node test-ollama-models.ts --all --auto-pull",
+    "test:ollama-quick": "ts-node test-ollama-quick.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "^7.0.0",
     "@sparticuz/chromium": "^143.0.0",

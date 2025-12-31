@@ -1,11 +1,11 @@
-import OpenAI from 'openai';
 import { ExtractionResult, ValidationResult, AIParserConfig, AIParserResponse } from '../types/ai-parser.types';
 import { logger } from '../utils/logger';
 import { AIExtractionError, AITimeoutError, AIRateLimitError } from '../utils/errors';
+import { getLLMProvider, LLMMessage, LLMProvider } from '../config/llm';
 
 const DEFAULT_CONFIG: AIParserConfig = {
-    provider: 'openai',
-    model: process.env.AI_MODEL || 'gpt-4o-mini',
+    provider: (process.env.LLM_PROVIDER || 'openai') as any,
+    model: process.env.AI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini',
     temperature: 0.1, // Low temperature for consistent extraction
     maxTokens: 4000,
     timeout: parseInt(process.env.AI_TIMEOUT || '20000', 10), // 20 seconds
@@ -13,28 +13,18 @@ const DEFAULT_CONFIG: AIParserConfig = {
     retryDelay: 1000, // 1 second, exponential backoff
 };
 
-// Initialize OpenAI client outside handler for reuse across Lambda invocations
-let openaiClient: OpenAI | null = null;
-
-function getOpenAIClient(): OpenAI {
-    if (!openaiClient) {
-        const apiKey = process.env.OPENAI_API_KEY;
-        if (!apiKey) {
-            throw new Error('OPENAI_API_KEY environment variable is not set');
-        }
-        openaiClient = new OpenAI({
-            apiKey,
-            timeout: DEFAULT_CONFIG.timeout,
-        });
-    }
-    return openaiClient;
-}
-
 export class AIParserService {
     private config: AIParserConfig;
+    private provider: LLMProvider;
 
     constructor(config?: Partial<AIParserConfig>) {
         this.config = { ...DEFAULT_CONFIG, ...config };
+        this.provider = (this.config.provider || 'openai') as LLMProvider;
+
+        logger.info('AI Parser Service initialized', {
+            provider: this.provider,
+            model: this.config.model,
+        });
     }
 
     /**
@@ -90,7 +80,7 @@ export class AIParserService {
                     await this.sleep(delay);
                 }
 
-                return await this.callOpenAI(text);
+                return await this.callLLM(text);
             } catch (error) {
                 lastError = error instanceof Error ? error : new Error('Unknown error');
                 logger.warn(`AI call attempt ${attempt + 1} failed`, {
@@ -113,55 +103,90 @@ export class AIParserService {
     }
 
     /**
-     * Call OpenAI API with structured prompt
+     * Call LLM service with structured prompt
      */
-    private async callOpenAI(text: string): Promise<ExtractionResult> {
-        const client = getOpenAIClient();
-
-        const systemPrompt = this.buildSystemPrompt();
-        const userPrompt = this.buildUserPrompt(text);
-
+    private async callLLM(text: string): Promise<ExtractionResult> {
         try {
-            const completion = await client.chat.completions.create({
-                model: this.config.model,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt },
-                ],
-                temperature: this.config.temperature,
-                max_tokens: this.config.maxTokens,
-                response_format: { type: 'json_object' },
+            const llmProvider = getLLMProvider(this.provider);
+
+            const systemPrompt = this.buildSystemPrompt();
+            const userPrompt = this.buildUserPrompt(text);
+
+            const messages: LLMMessage[] = [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt },
+            ];
+
+            logger.debug('Calling LLM provider', {
+                provider: this.provider,
+                messageCount: messages.length,
             });
 
-            const content = completion.choices[0]?.message?.content;
-            if (!content) {
-                throw new AIExtractionError('AI returned empty response');
+            const response = await llmProvider.generateCompletion(messages, {
+                temperature: this.config.temperature,
+                maxTokens: this.config.maxTokens,
+                responseFormat: 'json',
+            });
+
+            if (!response.success || !response.content) {
+                throw new AIExtractionError(
+                    response.error || 'LLM returned empty response',
+                    { provider: this.provider }
+                );
             }
 
-            const parsed = JSON.parse(content);
+            logger.debug('LLM response received', {
+                provider: response.provider,
+                usage: response.usage,
+            });
+
+            const parsed = JSON.parse(response.content);
             return this.normalizeExtraction(parsed);
         } catch (error) {
             if (error instanceof Error) {
                 const message = error.message.toLowerCase();
 
+                // Log the full error in development for debugging
+                if (process.env.NODE_ENV === 'development') {
+                    logger.error('LLM API error details', {
+                        provider: this.provider,
+                        message: error.message,
+                        error: error,
+                    });
+                }
+
                 if (message.includes('timeout') || message.includes('timed out')) {
                     throw new AITimeoutError(
                         'AI extraction timed out. Please try again with a simpler resume format.',
-                        { timeout: this.config.timeout }
+                        { timeout: this.config.timeout, provider: this.provider }
+                    );
+                }
+
+                if (message.includes('insufficient_quota') || message.includes('quota')) {
+                    throw new AIRateLimitError(
+                        `${this.provider.toUpperCase()} API quota exceeded. Please check your account billing.`,
+                        { retryAfter: null, originalError: error.message, provider: this.provider }
                     );
                 }
 
                 if (message.includes('rate_limit') || message.includes('rate limit') || message.includes('429')) {
                     throw new AIRateLimitError(
                         'AI service rate limit exceeded. Please try again in a few moments.',
-                        { retryAfter: 60 }
+                        { retryAfter: 60, provider: this.provider }
                     );
                 }
 
                 if (message.includes('json')) {
                     throw new AIExtractionError(
                         'Failed to parse AI response. The resume format may be too complex.',
-                        { parseError: error.message }
+                        { parseError: error.message, provider: this.provider }
+                    );
+                }
+
+                if (message.includes('connect') || message.includes('econnrefused')) {
+                    throw new AIExtractionError(
+                        `Cannot connect to ${this.provider}. Please check your configuration.`,
+                        { provider: this.provider, originalError: error.message }
                     );
                 }
             }

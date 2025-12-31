@@ -1,0 +1,291 @@
+Multi-Provider LLM Architecture
+================================
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Application Layer                            │
+│                                                                       │
+│  ┌──────────────────┐      ┌──────────────────┐                    │
+│  │  Import Handler  │      │  AI Parser       │                    │
+│  │  (import-ai.ts)  │─────▶│  Service         │                    │
+│  └──────────────────┘      └──────────────────┘                    │
+│                                     │                                │
+└─────────────────────────────────────┼────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         LLM Factory Layer                            │
+│                                                                       │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │                      LLMFactory                                │ │
+│  │  ┌─────────────────────────────────────────────────────────┐  │ │
+│  │  │  • Singleton instance                                    │  │ │
+│  │  │  • Provider cache                                        │  │ │
+│  │  │  • Auto-selection logic                                  │  │ │
+│  │  │  • Health checking                                       │  │ │
+│  │  └─────────────────────────────────────────────────────────┘  │ │
+│  │                                                                 │ │
+│  │  getProvider(provider?) ──▶ Returns LLMProviderInterface      │ │
+│  │  isProviderAvailable()  ──▶ Health check                      │ │
+│  │  autoSelectProvider()   ──▶ Fallback logic                    │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                       │
+└─────────────────────────────────────────────────────────────────────┘
+                                      │
+                    ┌─────────────────┼─────────────────┐
+                    │                 │                 │
+                    ▼                 ▼                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Provider Interface Layer                        │
+│                                                                       │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │              LLMProviderInterface                             │  │
+│  │  ┌────────────────────────────────────────────────────────┐  │  │
+│  │  │  generateCompletion(messages, options)                  │  │  │
+│  │  │  healthCheck()                                           │  │  │
+│  │  │  getProviderName()                                       │  │  │
+│  │  └────────────────────────────────────────────────────────┘  │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                                                                       │
+└─────────────────────────────────────────────────────────────────────┘
+                    │                 │                 │
+        ┌───────────┼─────────────────┼─────────────────┼───────────┐
+        │           │                 │                 │           │
+        ▼           ▼                 ▼                 ▼           ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Provider Implementations                        │
+│                                                                       │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐        │
+│  │ OpenAI   │   │  Claude  │   │  Ollama  │   │  Gemini  │        │
+│  │ Provider │   │ Provider │   │ Provider │   │ Provider │        │
+│  └──────────┘   └──────────┘   └──────────┘   └──────────┘        │
+│       │              │               │              │               │
+└───────┼──────────────┼───────────────┼──────────────┼───────────────┘
+        │              │               │              │
+        ▼              ▼               ▼              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         External APIs                                │
+│                                                                       │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐        │
+│  │ OpenAI   │   │Anthropic │   │  Local   │   │  Google  │        │
+│  │   API    │   │   API    │   │  Ollama  │   │   API    │        │
+│  │          │   │          │   │  Server  │   │          │        │
+│  │ gpt-4o   │   │ claude-3 │   │ llama3.2 │   │ gemini   │        │
+│  └──────────┘   └──────────┘   └──────────┘   └──────────┘        │
+│                                                                       │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+Configuration Flow
+==================
+
+┌─────────────┐
+│   .env      │
+│             │
+│ LLM_PROVIDER│──────┐
+│ =openai     │      │
+└─────────────┘      │
+                     ▼
+              ┌──────────────┐
+              │  LLMFactory  │
+              │  getInstance │
+              └──────────────┘
+                     │
+                     ▼
+              ┌──────────────┐
+              │ Initialize   │
+              │ OpenAI       │
+              │ Provider     │
+              └──────────────┘
+                     │
+                     ▼
+              ┌──────────────┐
+              │ Return       │
+              │ Provider     │
+              │ Instance     │
+              └──────────────┘
+
+
+Request Flow
+============
+
+1. User uploads resume
+        │
+        ▼
+2. Import handler receives file
+        │
+        ▼
+3. AIParserService.extractResumeData()
+        │
+        ▼
+4. getLLMProvider() ──▶ Returns configured provider
+        │
+        ▼
+5. provider.generateCompletion(messages)
+        │
+        ▼
+6. Provider calls external API
+        │
+        ▼
+7. Response parsed and returned
+        │
+        ▼
+8. Resume created in database
+
+
+Provider Selection Logic
+========================
+
+┌─────────────────────┐
+│ Check LLM_PROVIDER  │
+│ environment var     │
+└──────────┬──────────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Valid value? │
+    └──────┬───────┘
+           │
+     ┌─────┴─────┐
+     │           │
+    Yes         No
+     │           │
+     ▼           ▼
+┌─────────┐  ┌──────────┐
+│ Use     │  │ Default  │
+│ specified│  │ to       │
+│ provider│  │ 'openai' │
+└────┬────┘  └────┬─────┘
+     │            │
+     └─────┬──────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Initialize   │
+    │ provider     │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Cache        │
+    │ instance     │
+    └──────────────┘
+
+
+Health Check Flow
+=================
+
+┌─────────────────────┐
+│ isProviderAvailable │
+└──────────┬──────────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Try to       │
+    │ initialize   │
+    └──────┬───────┘
+           │
+     ┌─────┴─────┐
+     │           │
+  Success     Failure
+     │           │
+     ▼           ▼
+┌─────────┐  ┌──────────┐
+│ Call    │  │ Return   │
+│ health  │  │ false    │
+│ Check() │  └──────────┘
+└────┬────┘
+     │
+     ▼
+┌─────────────┐
+│ Make test   │
+│ API call    │
+└──────┬──────┘
+       │
+ ┌─────┴─────┐
+ │           │
+Success   Failure
+ │           │
+ ▼           ▼
+true       false
+
+
+Error Handling
+==============
+
+API Call
+   │
+   ▼
+┌──────────────┐
+│ Try request  │
+└──────┬───────┘
+       │
+ ┌─────┴─────┐
+ │           │
+Success   Error
+ │           │
+ ▼           ▼
+Return   ┌──────────────┐
+Result   │ Check error  │
+         │ type         │
+         └──────┬───────┘
+                │
+        ┌───────┼───────┐
+        │       │       │
+        ▼       ▼       ▼
+    Timeout  Quota  Rate Limit
+        │       │       │
+        ▼       ▼       ▼
+    Throw   Throw   Throw
+    Timeout Quota   RateLimit
+    Error   Error   Error
+
+
+Cost Comparison
+===============
+
+Provider          Cost/Import    Speed    Accuracy
+─────────────────────────────────────────────────
+OpenAI (mini)     $0.001        Fast     Good      ████████░░
+OpenAI (4o)       $0.018        Fast     Excellent ██████████
+Claude (sonnet)   $0.024        Fast     Excellent ██████████
+Claude (haiku)    $0.006        V.Fast   Good      ████████░░
+Gemini (flash)    $0.001        V.Fast   Good      ████████░░
+Ollama (local)    FREE          Medium   Good      ████████░░
+
+
+Environment Setup
+=================
+
+Development:
+  LLM_PROVIDER=ollama
+  OLLAMA_API_URL=http://localhost:11434/api/chat
+  OLLAMA_MODEL=llama3.2
+  
+  Benefits: FREE, Private, No API costs
+
+Staging:
+  LLM_PROVIDER=openai
+  OPENAI_API_KEY=sk-proj-staging-key
+  OPENAI_MODEL=gpt-4o-mini
+  
+  Benefits: Low cost, Reliable, Fast
+
+Production:
+  LLM_PROVIDER=openai
+  OPENAI_API_KEY=sk-proj-production-key
+  OPENAI_MODEL=gpt-4o-mini
+  
+  Benefits: Best value, Proven reliability
+
+
+Key Benefits
+============
+
+✓ Flexibility      - Switch providers without code changes
+✓ Cost Optimization - Use free Ollama for dev, paid for prod
+✓ Reliability      - Fallback to alternative providers
+✓ Testing          - Easy to test different providers
+✓ Extensibility    - Add new providers easily
+✓ Type Safety      - Full TypeScript support
+✓ Error Handling   - Provider-specific error messages
+✓ Health Monitoring - Built-in health checks
