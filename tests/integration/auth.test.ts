@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 app.use('/auth', authRoutes);
 app.use(errorHandler);
-
+ 
 describe('Authentication', () => {
     describe('POST /auth/signup', () => {
         it('should validate required fields', async () => {
