@@ -88,6 +88,13 @@ const languageSchema = Joi.object({
     proficiency: Joi.string().valid('basic', 'conversational', 'fluent', 'native').required(),
 });
 
+const customSectionSchema = Joi.object({
+    id: Joi.string().optional(),
+    title: Joi.string().optional().allow('').max(255),
+    content: Joi.string().optional().allow(''),
+    order: Joi.number().integer().optional(),
+}).unknown(true);
+
 const sectionMetadataSchema = Joi.object({
     id: Joi.string().required(),
     type: Joi.string().required().max(100),
@@ -128,6 +135,7 @@ const contentSchema = Joi.object({
     certifications: Joi.array().items(certificationSchema).optional(),
     projects: Joi.array().items(projectSchema).optional(),
     languages: Joi.array().items(languageSchema).optional(),
+    customSections: Joi.array().items(customSectionSchema).optional(),
     sectionOrder: Joi.array().items(sectionMetadataSchema).optional(),
     layout: layoutSchema.optional(),
 });
@@ -142,6 +150,7 @@ const contentUpdateSchema = Joi.object({
     certifications: Joi.array().items(certificationSchema).optional(),
     projects: Joi.array().items(projectSchema).optional(),
     languages: Joi.array().items(languageSchema).optional(),
+    customSections: Joi.array().items(customSectionSchema).optional(),
     sectionOrder: Joi.array().items(sectionMetadataSchema).optional(),
     layout: layoutSchema.optional(),
 });
