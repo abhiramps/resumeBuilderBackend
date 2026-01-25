@@ -4,6 +4,18 @@ frameworkVersion: '4'
 
 useDotenv: true
 
+build:
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: false
+    exclude:
+      - 'aws-sdk'
+    external:
+      - '@sparticuz/chromium'
+    target: node22
+    platform: node
+
 provider:
   name: aws
   runtime: nodejs22.x
@@ -30,6 +42,7 @@ provider:
       allowedOrigins:
         - https://resume-builder-seven-mu.vercel.app
         - https://resumebuildr.org
+        - https://www.resumebuildr.org
         - http://localhost:3000
       allowedHeaders:
         - Content-Type
@@ -55,7 +68,7 @@ provider:
 
 functions:
   auth:
-    handler: dist/handlers/auth.handler
+    handler: src/handlers/auth.handler
     events:
       - httpApi:
           path: /auth/{proxy+}
@@ -65,7 +78,7 @@ functions:
           method: ANY
 
   users:
-    handler: dist/handlers/users.handler
+    handler: src/handlers/users.handler
     events:
       - httpApi:
           path: /users/{proxy+}
@@ -75,7 +88,7 @@ functions:
           method: ANY
 
   resumes:
-    handler: dist/handlers/resumes.handler
+    handler: src/handlers/resumes.handler
     events:
       - httpApi:
           path: /resumes/{proxy+}
@@ -85,7 +98,7 @@ functions:
           method: ANY
 
   versions:
-    handler: dist/handlers/versions.handler
+    handler: src/handlers/versions.handler
     events:
       - httpApi:
           path: /resumes/{resumeId}/versions/{proxy+}
@@ -95,7 +108,7 @@ functions:
           method: ANY
 
   sharing:
-    handler: dist/handlers/sharing.handler
+    handler: src/handlers/sharing.handler
     events:
       - httpApi:
           path: /resumes/{id}/share
@@ -108,11 +121,23 @@ functions:
           method: GET
 
   health:
-    handler: dist/handlers/health.handler
+    handler: src/handlers/health.handler
     events:
       - httpApi:
           path: /health
           method: GET
+
+  exportPdf:
+    handler: src/handlers/export.handler
+    memorySize: 3008 # Chromium needs more memory (max for non-provisioned)
+    timeout: 30 # Generating PDF might take a few seconds
+    ephemeralStorageSize: 2048 # Increase tmp storage for Chromium extraction
+    layers:
+      - arn:aws:lambda:ap-south-1:407800164427:layer:chromium-sparticuz:2
+    events:
+      - httpApi:
+          path: /resumes/export
+          method: POST
 
 plugins:
   - serverless-offline
@@ -123,17 +148,8 @@ custom:
     noPrependStageInUrl: true
 
 package:
+  individually: true
   patterns:
-    # Exclude unnecessary Prisma engine binaries (keep only rhel for Lambda)
-    - '!node_modules/.prisma/client/libquery_engine-darwin*'
-    - '!node_modules/.prisma/client/libquery_engine-debian*'
-    - '!node_modules/.prisma/client/libquery_engine-linux*'
-    - '!node_modules/.prisma/client/libquery_engine-windows*'
-    - 'node_modules/.prisma/client/libquery_engine-rhel-*'
-    - '!node_modules/prisma/libquery_engine-*'
-    - '!node_modules/@prisma/engines/**'
-    # Exclude WASM engine (not needed for Node.js Lambda)
-    - '!node_modules/.prisma/client/query_engine_bg.wasm'
     # Exclude test files and development artifacts
     - '!tests/**'
     - '!**/*.test.ts'

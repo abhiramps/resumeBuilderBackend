@@ -25,6 +25,23 @@ export interface ResumeContent {
     certifications?: Certification[];
     projects?: Project[];
     languages?: Language[];
+    customSections?: CustomSection[];
+    sectionOrder?: SectionMetadata[];
+}
+
+export interface CustomSection {
+    id: string;
+    title: string;
+    content: string;
+    order?: number;
+}
+
+export interface SectionMetadata {
+    id: string;
+    type: string;
+    title: string;
+    enabled: boolean;
+    order: number;
 }
 
 export interface PersonalInfo {

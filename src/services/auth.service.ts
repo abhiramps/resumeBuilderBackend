@@ -2,6 +2,8 @@ import { supabase } from '../utils/supabase';
 import { prisma } from '../utils/prisma';
 import { SignUpData, SignInData, AuthResponse } from '../types/auth.types';
 import { config } from '../config';
+import { User } from '@supabase/supabase-js';
+import { serializeBigInt } from '../utils/serialization';
 
 export class AuthService {
     async signUp(data: SignUpData): Promise<AuthResponse> {
@@ -162,5 +164,26 @@ export class AuthService {
         // Note: Session revocation is handled through signOut
         // Individual session management requires custom implementation
         throw new Error('Session revocation not implemented');
+    }
+
+    async ensureUserExists(authUser: User): Promise<any> {
+        // Upsert user in database using data from Supabase Auth
+        const user = await prisma.user.upsert({
+            where: { id: authUser.id },
+            update: {
+                lastLoginAt: new Date(),
+                avatarUrl: authUser.user_metadata?.avatar_url,
+            },
+            create: {
+                id: authUser.id,
+                email: authUser.email!,
+                fullName: authUser.user_metadata?.full_name || authUser.email!,
+                avatarUrl: authUser.user_metadata?.avatar_url,
+                lastLoginAt: new Date(),
+            },
+        });
+
+        // Convert BigInt fields to strings for JSON serialization
+        return serializeBigInt(user);
     }
 }

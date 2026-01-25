@@ -85,8 +85,10 @@ router.get('/oauth/callback', async (req, res, next) => {
 // Get current session
 router.get('/session', authenticate, async (req: AuthRequest, res, next) => {
     try {
+        // Ensure user exists in database (important for OAuth users)
+        const user = await authService.ensureUserExists(req.supabaseUser!);
         res.json({
-            user: req.user,
+            user,
         });
     } catch (error) {
         next(error);
