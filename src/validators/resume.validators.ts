@@ -126,6 +126,12 @@ const layoutSchema = Joi.object({
     }).optional(),
 });
 
+const additionalInfoSchema = Joi.object({
+    id: Joi.string().required(),
+    title: Joi.string().optional().allow('').max(255),
+    content: Joi.array().items(Joi.string().allow('').max(1000)).optional(),
+});
+
 const contentSchema = Joi.object({
     personalInfo: personalInfoSchema.optional(),
     summary: Joi.string().optional().max(2000),
@@ -135,6 +141,7 @@ const contentSchema = Joi.object({
     certifications: Joi.array().items(certificationSchema).optional(),
     projects: Joi.array().items(projectSchema).optional(),
     languages: Joi.array().items(languageSchema).optional(),
+    additionalInfo: Joi.array().items(additionalInfoSchema).optional(),
     customSections: Joi.array().items(customSectionSchema).optional(),
     sectionOrder: Joi.array().items(sectionMetadataSchema).optional(),
     layout: layoutSchema.optional(),
@@ -150,6 +157,7 @@ const contentUpdateSchema = Joi.object({
     certifications: Joi.array().items(certificationSchema).optional(),
     projects: Joi.array().items(projectSchema).optional(),
     languages: Joi.array().items(languageSchema).optional(),
+    additionalInfo: Joi.array().items(additionalInfoSchema).optional(),
     customSections: Joi.array().items(customSectionSchema).optional(),
     sectionOrder: Joi.array().items(sectionMetadataSchema).optional(),
     layout: layoutSchema.optional(),
