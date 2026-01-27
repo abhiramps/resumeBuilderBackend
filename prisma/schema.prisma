@@ -58,6 +58,9 @@ model Resume {
   // Resume content (JSONB)
   content Json
 
+  // Sector (e.g., it, finance, general)
+  sector String @default("general")
+
   // Version control
   version          Int     @default(1)
   isCurrentVersion Boolean @default(true) @map("is_current_version")

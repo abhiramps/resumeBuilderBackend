@@ -167,6 +167,7 @@ export const createResumeSchema = Joi.object({
     title: Joi.string().required().min(1).max(255).trim(),
     templateId: Joi.string().optional().max(100),
     content: contentSchema.optional(),
+    sector: Joi.string().valid('it', 'finance', 'medical', 'marketing', 'sales', 'legal', 'general').optional(),
 });
 
 export const updateResumeSchema = Joi.object({
@@ -174,4 +175,5 @@ export const updateResumeSchema = Joi.object({
     templateId: Joi.string().optional().max(100),
     content: contentUpdateSchema.optional(),
     status: Joi.string().valid('draft', 'published').optional(),
+    sector: Joi.string().valid('it', 'finance', 'medical', 'marketing', 'sales', 'legal', 'general').optional(),
 });

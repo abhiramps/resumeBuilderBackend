@@ -21,15 +21,16 @@ export class ResumeService {
                 userId,
                 title: data.title,
                 templateId: data.templateId || 'modern',
+                sector: data.sector || 'general',
                 content: (data.content || {}) as Prisma.InputJsonValue,
                 status: 'draft',
-            },
+            } as any,
         });
 
         // Update user resume count
         await this.updateResumeCount(userId);
 
-        return resume as Resume;
+        return resume as unknown as Resume;
     }
 
     async getById(resumeId: string, userId: string): Promise<Resume> {
@@ -45,7 +46,7 @@ export class ResumeService {
             throw new NotFoundError('Resume not found');
         }
 
-        return resume as Resume;
+        return resume as unknown as Resume;
     }
 
     async list(
@@ -91,6 +92,7 @@ export class ResumeService {
                     title: true,
                     description: true,
                     templateId: true,
+                    sector: true,
                     status: true,
                     isPublic: true,
                     publicSlug: true,
@@ -106,7 +108,7 @@ export class ResumeService {
         ]);
 
         return {
-            resumes: resumes as any as Resume[],
+            resumes: resumes as unknown as Resume[],
             total,
         };
     }
@@ -201,7 +203,7 @@ export class ResumeService {
         ]);
 
         return {
-            resumes: resumes as Resume[],
+            resumes: resumes as unknown as Resume[],
             total,
         };
     }
@@ -214,6 +216,7 @@ export class ResumeService {
         if (updates.title !== undefined) updateData.title = updates.title;
         if (updates.templateId !== undefined) updateData.templateId = updates.templateId;
         if (updates.status !== undefined) updateData.status = updates.status;
+        if (updates.sector !== undefined) updateData.sector = updates.sector;
         if (updates.content !== undefined) updateData.content = updates.content as Prisma.InputJsonValue;
 
         const resume = await prisma.resume.update({
@@ -221,7 +224,7 @@ export class ResumeService {
             data: updateData,
         });
 
-        return resume as Resume;
+        return resume as unknown as Resume;
     }
 
     async delete(resumeId: string, userId: string): Promise<void> {
@@ -359,7 +362,7 @@ export class ResumeService {
             data: updateData,
         });
 
-        return updatedResume as Resume;
+        return updatedResume as unknown as Resume;
     }
 
     async export(resumeId: string, userId: string): Promise<ExportedResume> {
@@ -417,7 +420,7 @@ export class ResumeService {
         // Update user resume count
         await this.updateResumeCount(userId);
 
-        return resume as Resume;
+        return resume as unknown as Resume;
     }
 
     async duplicate(resumeId: string, userId: string): Promise<Resume> {
@@ -436,6 +439,7 @@ export class ResumeService {
                 userId,
                 title: `${original.title} (Copy)`,
                 templateId: original.templateId,
+                sector: original.sector,
                 content: original.content as Prisma.InputJsonValue,
                 status: 'draft',
             },
@@ -444,7 +448,7 @@ export class ResumeService {
         // Update user resume count
         await this.updateResumeCount(userId);
 
-        return duplicate as Resume;
+        return duplicate as unknown as Resume;
     }
 
     async bulkExport(userId: string, resumeIds?: string[]): Promise<BulkExportData> {

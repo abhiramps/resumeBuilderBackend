@@ -1,9 +1,12 @@
+export type Sector = 'it' | 'finance' | 'medical' | 'marketing' | 'sales' | 'legal' | 'general';
+
 export interface Resume {
     id: string;
     userId: string;
     title: string;
     description?: string | null;
     templateId: string;
+    sector: Sector;
     content: ResumeContent;
     status: 'draft' | 'published';
     isPublic: boolean;
@@ -114,14 +117,17 @@ export interface Language {
 
 export interface CreateResumeData {
     title: string;
+    description?: string;
     templateId?: string;
-    content?: ResumeContent;
+    content?: Record<string, any>;
+    sector?: Sector;
 }
 
 export interface UpdateResumeData {
     title?: string;
     templateId?: string;
     content?: ResumeContent;
+    sector?: Sector;
     status?: 'draft' | 'published';
 }
 
