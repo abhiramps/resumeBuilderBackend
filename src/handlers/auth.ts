@@ -60,6 +60,30 @@ router.post('/reset-password', validateRequest(resetPasswordSchema), async (req,
     }
 });
 
+// Verify email (deferred flow)
+router.post('/verify', async (req, res, next) => {
+    try {
+        const { token } = req.body;
+        if (!token) throw new Error('Token is required');
+        await authService.verifyEmailToken(token);
+        res.json({ message: 'Email verified successfully' });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Resend verification (deferred flow)
+router.post('/verification/resend', async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        if (!email) throw new Error('Email is required');
+        await authService.resendVerificationEmail(email);
+        res.json({ message: 'Verification email sent' });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // OAuth sign in
 router.get('/oauth/:provider', async (req, res, next) => {
     try {

@@ -24,6 +24,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
+    "prisma:pull": "prisma db pull",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:studio:local": "DOTENV_CONFIG_PATH=.env.local node -r dotenv/config node_modules/.bin/prisma studio",

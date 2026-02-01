@@ -4,6 +4,7 @@ import { SignUpData, SignInData, AuthResponse } from '../types/auth.types';
 import { config } from '../config';
 import { User } from '@supabase/supabase-js';
 import { serializeBigInt } from '../utils/serialization';
+import { nanoid } from 'nanoid';
 
 export class AuthService {
     async signUp(data: SignUpData): Promise<AuthResponse> {
@@ -11,6 +12,7 @@ export class AuthService {
 
         // Ensure frontend URL doesn't have trailing slash
         const frontendUrl = config.frontend.url.replace(/\/$/, '');
+        // We don't need Supabase redirect anymore for deferred flow, but keeping it harmless
         const redirectUrl = `${frontendUrl}/auth/confirm`;
 
         // Log redirect URL for debugging (remove in production if needed)
@@ -18,6 +20,7 @@ export class AuthService {
         console.log('[AuthService] SignUp - FRONTEND_URL env:', process.env.FRONTEND_URL);
 
         // Sign up with Supabase Auth
+        // Assumption: "Enable Email Confirmations" is DISABLED in Supabase
         const { data: authData, error } = await supabase.auth.signUp({
             email,
             password,
@@ -31,25 +34,36 @@ export class AuthService {
 
         if (error) throw error;
 
-        // Create user profile in database using Prisma
+        // Generate verification token
+        const verificationToken = nanoid(32);
+
+        // Create user profile in database using Prisma with verification token
         if (authData.user) {
             await prisma.user.create({
                 data: {
                     id: authData.user.id,
                     email: authData.user.email!,
                     fullName: fullName,
+                    isEmailVerified: false, // Default to false
+                    verificationToken: verificationToken,
                 },
             });
+
+            // Send custom verification email
+            // MOCK EMAIL SENDING
+            const verificationLink = `${frontendUrl}/verify?token=${verificationToken}`;
+            console.log('---------------------------------------------------');
+            console.log(`[Email Service] To: ${email}`);
+            console.log(`[Email Service] Subject: Verify your email`);
+            console.log(`[Email Service] Body: Click here to verify: ${verificationLink}`);
+            console.log('---------------------------------------------------');
         }
 
-        // Check if email verification is required
-        // Session will be null if email verification is required
-        const requiresEmailVerification = !authData.session && !!authData.user && !authData.user.email_confirmed_at;
-
+        // Return session immediately (Deferred Verification)
         return {
             user: authData.user,
             session: authData.session,
-            requiresEmailVerification,
+            requiresEmailVerification: false, // We don't block login anymore
         };
     }
 
@@ -88,6 +102,57 @@ export class AuthService {
         if (error) throw error;
     }
 
+    // New method for custom token verification
+    async verifyEmailToken(token: string): Promise<void> {
+        const user = await prisma.user.findFirst({
+            where: { verificationToken: token },
+        });
+
+        if (!user) {
+            throw new Error('Invalid or expired verification token');
+        }
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                isEmailVerified: true,
+                verificationToken: null, // Clear token after use
+            },
+        });
+    }
+
+    // New method to resend verification email
+    async resendVerificationEmail(email: string): Promise<void> {
+        const user = await prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        if (user.isEmailVerified) {
+             // Already verified, do nothing or throw
+             return;
+        }
+
+        const verificationToken = nanoid(32);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { verificationToken },
+        });
+
+        const frontendUrl = config.frontend.url.replace(/\/$/, '');
+        const verificationLink = `${frontendUrl}/verify?token=${verificationToken}`;
+        
+        console.log('---------------------------------------------------');
+        console.log(`[Email Service] Resending to: ${email}`);
+        console.log(`[Email Service] Subject: Verify your email`);
+        console.log(`[Email Service] Body: Click here to verify: ${verificationLink}`);
+        console.log('---------------------------------------------------');
+    }
+
+    // Deprecated method for Supabase native verification (kept for compatibility if needed)
     async verifyEmail(token: string): Promise<void> {
         const { error } = await supabase.auth.verifyOtp({
             token_hash: token,
