@@ -1,7 +1,30 @@
 
 import puppeteer, { Browser } from 'puppeteer-core';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export class PdfService {
+  private static getFontBase64(): string {
+    try {
+      // Resolve path compatible with both Lambda and local environment
+      // In Lambda, process.cwd() is /var/task.
+      // We expect src/assets/fonts/Inter-Variable.woff2 to be there.
+      const fontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'Inter-Variable.woff2');
+      console.log('Attempting to load font from:', fontPath);
+
+      if (fs.existsSync(fontPath)) {
+        const fontBuffer = fs.readFileSync(fontPath);
+        return fontBuffer.toString('base64');
+      }
+      
+      console.warn(`Font file not found at ${fontPath}`);
+      return '';
+    } catch (error) {
+      console.error('Error reading font file:', error);
+      return '';
+    }
+  }
+
   private static async getBrowser(): Promise<Browser> {
     const isOffline = process.env.IS_OFFLINE;
     const isLambda = !isOffline && (process.env.AWS_LAMBDA_FUNCTION_VERSION || process.env.AWS_EXECUTION_ENV);
@@ -62,6 +85,21 @@ export class PdfService {
       browser = await this.getBrowser();
       const page = await browser.newPage();
 
+      // Load font
+      const fontBase64 = this.getFontBase64();
+      const fontFaceCss = fontBase64 ? `
+        @font-face {
+          font-family: 'Inter';
+          font-style: normal;
+          font-weight: 100 900;
+          font-display: swap;
+          src: url(data:font/woff2;base64,${fontBase64}) format('woff2');
+        }
+        body {
+          font-family: 'Inter', sans-serif !important;
+        }
+      ` : '';
+
       // Wrap content in full HTML structure with tailwind-like base styles
       const fullHtml = `
         <!DOCTYPE html>
@@ -69,6 +107,7 @@ export class PdfService {
           <head>
             <meta charset="UTF-8">
             <style>
+              ${fontFaceCss}
               /* Tailwind-like base reset */
               *, ::before, ::after {
                 box-sizing: border-box;
@@ -99,6 +138,30 @@ export class PdfService {
         waitUntil: 'networkidle0',
         timeout: 30000
       });
+
+      // --- DEBUG: Font Loading Status ---
+      const fontDebug = await page.evaluate(async () => {
+        // @ts-ignore
+        await document.fonts.ready;
+        const fonts = [];
+        // @ts-ignore
+        for (const font of document.fonts) {
+          fonts.push({
+            family: font.family,
+            status: font.status,
+            style: font.style,
+            weight: font.weight
+          });
+        }
+        return {
+          // @ts-ignore
+          status: document.fonts.status,
+          loadedFonts: fonts,
+          navigatorUserAgent: navigator.userAgent
+        };
+      });
+      console.log('Font Debug Info:', JSON.stringify(fontDebug, null, 2));
+      // ----------------------------------
 
       // Wait for fonts to be loaded
       await page.evaluateHandle('document.fonts.ready');

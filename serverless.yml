@@ -150,6 +150,7 @@ custom:
 package:
   individually: true
   patterns:
+    - 'src/assets/fonts/**'
     # Exclude test files and development artifacts
     - '!tests/**'
     - '!**/*.test.ts'
