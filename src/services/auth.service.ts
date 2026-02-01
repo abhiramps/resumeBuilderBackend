@@ -188,6 +188,7 @@ export class AuthService {
                 update: {
                     lastLoginAt: new Date(),
                     avatarUrl: data.user.user_metadata.avatar_url,
+                    isEmailVerified: true, // OAuth users are verified by default
                 },
                 create: {
                     id: data.user.id,
@@ -195,6 +196,7 @@ export class AuthService {
                     fullName: data.user.user_metadata.full_name || data.user.email!,
                     avatarUrl: data.user.user_metadata.avatar_url,
                     lastLoginAt: new Date(),
+                    isEmailVerified: true, // OAuth users are verified by default
                 },
             });
         }
