@@ -37,6 +37,7 @@ provider:
     FRONTEND_URL: ${env:FRONTEND_URL}
     LOG_LEVEL: ${env:LOG_LEVEL}
     PORT: ${env:PORT}
+    PDF_SERVICE_URL: ${env:PDF_SERVICE_URL}
   httpApi:
     cors:
       allowedOrigins:

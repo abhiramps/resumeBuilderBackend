@@ -35,6 +35,9 @@ export const config = {
     frontend: {
         url: process.env.FRONTEND_URL || 'http://localhost:3000',
     },
+    pdfService: {
+        url: process.env.PDF_SERVICE_URL || 'http://localhost:3005',
+    },
 };
 
 // Validate required environment variables
@@ -44,6 +47,7 @@ const requiredEnvVars = [
     'SUPABASE_KEY',
     'SUPABASE_SERVICE_KEY',
     'JWT_SECRET',
+    'PDF_SERVICE_URL',
 ];
 
 for (const envVar of requiredEnvVars) {
