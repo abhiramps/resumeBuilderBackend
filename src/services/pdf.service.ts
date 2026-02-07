@@ -1,5 +1,7 @@
-
 import puppeteer, { Browser } from 'puppeteer-core';
+import { INTER_FONT_BASE64 } from '../assets/fonts/inter';
+import axios from 'axios';
+import { config } from '../config';
 
 export class PdfService {
   private static async getBrowser(): Promise<Browser> {
@@ -11,42 +13,32 @@ export class PdfService {
 
     if (isLambda) {
       console.log('Running in Lambda environment');
-
-      // Use @sparticuz/chromium for Lambda (from Layer)
       try {
         const chromium = await import('@sparticuz/chromium');
         executablePath = await chromium.default.executablePath();
-        console.log('Chromium executable path:', executablePath);
-
         if (!executablePath) {
           throw new Error('Chromium executable path is undefined');
         }
-
         args = [
           ...chromium.default.args,
-          '--disable-dev-shm-usage', // Important for Lambda
+          '--disable-dev-shm-usage',
           '--single-process',
         ];
-
-        console.log('Chromium args:', args);
       } catch (error) {
         console.error('Error getting Chromium executable path:', error);
         throw error;
       }
     } else {
       console.log('Running in local environment');
-      // Local development fallback paths
       const platform = process.platform;
       if (platform === 'darwin') {
         executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
       } else if (platform === 'win32') {
         executablePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
       } else {
-        executablePath = '/usr/bin/google-chrome'; // Linux fallback
+        executablePath = '/usr/bin/google-chrome';
       }
     }
-
-    console.log('Launching browser with executablePath:', executablePath);
 
     return puppeteer.launch({
       args,
@@ -57,19 +49,57 @@ export class PdfService {
   }
 
   static async generatePdf(html: string, css: string): Promise<Buffer> {
+    const externalServiceUrl = config.pdfService.url;
+
+    console.log('PDF Generation requested. PDF_SERVICE_URL:', externalServiceUrl || 'NOT SET (using local)');
+
+    if (externalServiceUrl) {
+      const targetUrl = `${externalServiceUrl.replace(/\/$/, '')}/generate-pdf`;
+      console.log(`Delegating PDF generation to: ${targetUrl}`);
+      try {
+        const response = await axios.post(targetUrl, {
+          html,
+          css
+        }, {
+          responseType: 'arraybuffer',
+          timeout: 25000
+        });
+
+        console.log(`External service responded with status: ${response.status}, content-length: ${response.data.byteLength}`);
+        return Buffer.from(response.data);
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          console.error('External PDF service axios error:', {
+            message: error.message,
+            code: error.code,
+            status: error.response?.status,
+            data: error.response?.data ? 'present' : 'absent'
+          });
+        } else {
+          console.error('External PDF service unexpected error:', error instanceof Error ? error.message : error);
+        }
+        console.log('Falling back to local PDF generation...');
+      }
+    }
+
     let browser: Browser | null = null;
     try {
       browser = await this.getBrowser();
       const page = await browser.newPage();
 
-      // Wrap content in full HTML structure with tailwind-like base styles
       const fullHtml = `
         <!DOCTYPE html>
         <html>
           <head>
             <meta charset="UTF-8">
             <style>
-              /* Tailwind-like base reset */
+              @font-face {
+                font-family: 'Inter';
+                font-style: normal;
+                font-weight: 300 700;
+                font-display: swap;
+                src: url(data:font/woff2;base64,${INTER_FONT_BASE64}) format('woff2');
+              }
               *, ::before, ::after {
                 box-sizing: border-box;
                 border-width: 0;
@@ -83,8 +113,9 @@ export class PdfService {
                 print-color-adjust: exact;
                 -webkit-font-smoothing: antialiased;
                 -moz-osx-font-smoothing: grayscale;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
               }
-              /* Inject received CSS */
+              * { font-family: inherit; }
               ${css}
             </style>
           </head>
@@ -94,30 +125,27 @@ export class PdfService {
         </html>
       `;
 
-      // Set content and wait for fonts to load
       await page.setContent(fullHtml, {
         waitUntil: 'networkidle0',
         timeout: 30000
       });
 
-      // Wait for fonts to be loaded
-      await page.evaluateHandle('document.fonts.ready');
+      await page.evaluate(async () => {
+        const fontLoads = [
+          document.fonts.load('16px "Inter"'),
+          document.fonts.load('700 16px "Inter"'),
+          document.fonts.load('500 16px "Inter"')
+        ];
+        await Promise.all(fontLoads);
+        await document.fonts.ready;
+      });
 
-      // Generate PDF
-      // We want standard Letter size, no headers/footers, and print background colors
-      // Margins are primarily handled by the CSS @page directive, but we can set a fallback here or 0 if CSS handles it.
-      // Ideally, we respect the CSS @page rules.
       const pdfBuffer = await page.pdf({
         format: 'Letter',
         printBackground: true,
         displayHeaderFooter: false,
-        margin: {
-          top: '0px',
-          bottom: '0px',
-          left: '0px',
-          right: '0px'
-        },
-        preferCSSPageSize: true // Respect @page rules from CSS
+        margin: { top: '0px', bottom: '0px', left: '0px', right: '0px' },
+        preferCSSPageSize: true
       });
 
       return Buffer.from(pdfBuffer);
