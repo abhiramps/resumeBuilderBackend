@@ -36,6 +36,11 @@ async function launchBrowser(): Promise<Browser> {
     } else {
       executablePath = '/usr/bin/google-chrome';
     }
+
+    // Chromium refuses to start as root without these flags. Local dev
+    // (especially inside containers) often runs as root, so pass them
+    // unconditionally for the local branch — they're a no-op for non-root.
+    args = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'];
   }
 
   logger.info('Launching Chromium', { executablePath, isLambda: !!isLambda });
