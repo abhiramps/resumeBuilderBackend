@@ -26,8 +26,7 @@ export class ResumeService {
             },
         });
 
-        // Update user resume count
-        await this.updateResumeCount(userId);
+        await this.adjustResumeCount(userId, 1);
 
         return resume as Resume;
     }
@@ -196,12 +195,27 @@ export class ResumeService {
                 orderBy,
                 skip: offset,
                 take: limit,
+                select: {
+                    id: true,
+                    userId: true,
+                    title: true,
+                    description: true,
+                    templateId: true,
+                    status: true,
+                    isPublic: true,
+                    publicSlug: true,
+                    atsScore: true,
+                    viewCount: true,
+                    exportCount: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
             }),
             prisma.resume.count({ where }),
         ]);
 
         return {
-            resumes: resumes as Resume[],
+            resumes: resumes as any as Resume[],
             total,
         };
     }
@@ -234,8 +248,7 @@ export class ResumeService {
             data: { deletedAt: new Date() },
         });
 
-        // Update user resume count
-        await this.updateResumeCount(userId);
+        await this.adjustResumeCount(userId, -1);
     }
 
     async share(resumeId: string, userId: string): Promise<ShareResumeResponse> {
@@ -414,8 +427,7 @@ export class ResumeService {
             },
         });
 
-        // Update user resume count
-        await this.updateResumeCount(userId);
+        await this.adjustResumeCount(userId, 1);
 
         return resume as Resume;
     }
@@ -441,8 +453,7 @@ export class ResumeService {
             },
         });
 
-        // Update user resume count
-        await this.updateResumeCount(userId);
+        await this.adjustResumeCount(userId, 1);
 
         return duplicate as Resume;
     }
@@ -475,17 +486,10 @@ export class ResumeService {
         };
     }
 
-    private async updateResumeCount(userId: string): Promise<void> {
-        const count = await prisma.resume.count({
-            where: {
-                userId,
-                deletedAt: null,
-            },
-        });
-
+    private async adjustResumeCount(userId: string, delta: number): Promise<void> {
         await prisma.user.update({
             where: { id: userId },
-            data: { resumeCount: count },
+            data: { resumeCount: { increment: delta } },
         });
     }
 }

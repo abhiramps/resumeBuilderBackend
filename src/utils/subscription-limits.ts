@@ -48,15 +48,11 @@ export const checkSubscriptionLimits = async (
         return true;
     }
 
-    // Check current usage based on limit type
+    // Check current usage based on limit type. user.resumeCount is the
+    // denormalized counter kept in sync by ResumeService — no need to
+    // re-count rows here.
     if (limitType === 'max_resumes') {
-        const count = await prisma.resume.count({
-            where: {
-                userId,
-                deletedAt: null,
-            },
-        });
-        return count < limit;
+        return user.resumeCount < limit;
     }
 
     // Add other limit checks as needed
