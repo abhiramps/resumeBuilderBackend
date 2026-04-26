@@ -4,7 +4,7 @@ import authRoutes from '../../src/handlers/auth';
 import { errorHandler } from '../../src/middleware/error.middleware';
 
 const app = express();
-app.use(express.json());
+app.use(express.json()); 
 app.use('/auth', authRoutes);
 app.use(errorHandler);
 
